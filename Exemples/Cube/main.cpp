@@ -20,9 +20,9 @@ void onAppUpdate(float delta) {
 
 int main() {
 	ApplicationInfo app_info{};
+	app_info.name = "Cube";
 	Application::init(app_info);
 	//-----------------------SETUP--------------------
-	Configs::setWindowTitle("Pong");
 	{
 		//-----------------------Games--------------------
 		CubeScene cubeScene = CubeScene();

@@ -31,9 +31,6 @@ namespace Pong {
 		createResources();
 
 		setupScene();
-		Entity camera_entity = createEntity3D();
-		PixelCamera &camera = camera_entity.attach<PixelCamera>();
-		camera.setRenderTarget(render_target);
 
 		this->onUpdate.subscribe(this, &PongUIScene::updateUI);
 
@@ -86,6 +83,10 @@ namespace Pong {
 	}
 
 	void PongUIScene::setupScene() {
+		Entity camera_entity = createEntity3D();
+		PixelCamera &camera = camera_entity.attach<PixelCamera>();
+		camera.setRenderTarget(render_target);
+
 		score_left_entity = createScore(left_text_pipeline_instance, score_left_mesh);
 		score_right_entity = createScore(right_text_pipeline_instance, score_right_mesh);
 

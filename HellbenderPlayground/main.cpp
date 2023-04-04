@@ -54,10 +54,10 @@ void onAppPresent() {
 int main() {
 	ApplicationInfo app_info{};
 	app_info.hardware_flags = HARDWARE_FLAG_NONE;
-
+	app_info.name = "Hellbender";
 	Application::init(app_info);
 	//-----------------------SETUP--------------------
-	Configs::setWindowTitle("Hellbender");
+
 	//Pathfinder *pathfinder = new Pathfinder();
 	{
 		//-----------------------tests-------------------

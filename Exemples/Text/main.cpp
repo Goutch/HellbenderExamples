@@ -20,9 +20,10 @@ void onAppUpdate(float delta) {
 
 int main() {
 	ApplicationInfo app_info{};
+	app_info.name = "Text";
 	Application::init(app_info);
 	//-----------------------SETUP--------------------
-	Configs::setWindowTitle("Pong");
+
 	{
 		//-----------------------Games--------------------
 		TextScene model_scene = TextScene();

@@ -57,10 +57,9 @@ int main() {
 	ApplicationInfo app_info{};
 	app_info.hardware_flags = HARDWARE_FLAG_GPU_REQUIRE_RTX_CAPABILITIES |
 							  HARDWARE_FLAG_GPU_REQUIRE_DESCRIPTOR_INDEXING_CAPABILITIES;
-
+	app_info.name = "Raytracer";
 	Application::init(app_info);
 	//-----------------------SETUP--------------------
-	Configs::setWindowTitle("Raytracer");
 	{
 		//-----------------------tests-------------------
 		//main_scene = new TriangleScene();

@@ -44,9 +44,9 @@ int main() {
 		return 0;
 	}
 	ApplicationInfo app_info{};
+	app_info.name = "Pong";
 	Application::init(app_info);
 	//-----------------------SETUP--------------------
-	Configs::setWindowTitle("Pong");
 	{
 		//-----------------------Games--------------------
 		PongLockstep::PongGame pong = PongLockstep::PongGame(input);
