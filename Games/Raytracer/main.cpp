@@ -36,7 +36,6 @@ void onAppUpdate(float delta) {
 			}
 		}
 	}
-
 }
 
 void onAppPresent() {

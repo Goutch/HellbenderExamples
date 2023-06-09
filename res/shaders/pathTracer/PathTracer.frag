@@ -153,7 +153,6 @@ void main() {
     bool sucess = true;
     int step_index = 0;
 
-
     uint v = loadVoxel(lod, voxel_pos);
     while (true)
     {

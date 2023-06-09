@@ -129,7 +129,8 @@ public:
 	}
 
 
-	void render(RenderGraph *render_graph) {
+	void render() override {
+		Scene::render();
 		Entity camera_entity = getCameraEntity();
 		if (!paused)
 			frame.time = Application::getTime() * 0.05;
@@ -197,7 +198,8 @@ public:
 
 	}
 
-	void update(float delta) {
+	void update(float delta) override {
+		Scene::update(delta);
 		if (Input::getKeyDown(KEY_NUMBER_0)) {
 			frame.use_blue_noise = !bool(frame.use_blue_noise);
 		}
@@ -346,34 +348,6 @@ public:
 
 		std::vector<AABBAccelerationStructure *> aabb_acceleration_structures{aabb_acceleration_structure};
 
-		/*std::vector<StorageBuffer *> storage_buffer_array(output_texture->getWidth(), nullptr);
-		for (int i = 0; i < output_texture->getWidth(); ++i) {
-			StorageBufferInfo storageBufferInfo{};
-			storageBufferInfo.count = output_texture->getHeight();
-			storageBufferInfo.stride = sizeof(vec4);
-			std::vector<vec4> data(output_texture->getHeight(), vec4(0, 0, 0, 0));
-			for (int j = 0; j < output_texture->getHeight(); ++j) {
-				data[j] = vec4(Random::floatRange(0, 1), Random::floatRange(0, 1), Random::floatRange(0, 1), 1);
-			}
-			storage_buffer_array[i] = Resources::createStorageBuffer(storageBufferInfo);
-			storage_buffer_array[i]->update(data.data());
-		}*/
-
-		/*std::vector<VertexBindingInfo> vertex_binding_infos{};
-		vertex_binding_infos.push_back(VertexBindingInfo{0, sizeof(vec3), VERTEX_BINDING_FLAG_NONE});
-
-		MeshInfo mesh_info{};
-		mesh_info.flags = MESH_FLAG_USED_IN_RAYTRACING;
-		mesh_info.binding_infos = vertex_binding_infos.data();
-		mesh_info.binding_info_count = vertex_binding_infos.size();
-
-		ModelInfo model_info{};
-		model_info.path = "models/dragon.gltf";
-		model_info.flags = MODEL_FLAG_DONT_LOAD_MATERIALS | MODEL_FLAG_USED_IN_RAYTRACING;
-		MeshAccelerationStructureInfo mesh_acceleration_structure_info{};
-
-		std::vector<MeshAccelerationStructure *> mesh_acceleration_structures{};*/
-
 		std::vector<AccelerationStructureInstance> acceleration_structure_instances{};
 
 		mat4 transform_aabb_floor(1.0f);
@@ -492,8 +466,6 @@ public:
 		//StorageBuffer **pbuffers = storage_buffer_array.data();
 		//pathtracing_resources.pipeline_instance->setStorageBufferArray("vertices", pbuffers, storage_buffer_array.size());
 
-		onRender.subscribe(this, &RaytracingScene::render);
-		onUpdate.subscribe(this, &RaytracingScene::update);
 		Entity camera_entity = createEntity3D();
 		camera_entity.attach<Camera>();
 		camera_entity.get<Camera>().setRenderTarget(Graphics::getDefaultRenderTarget());
