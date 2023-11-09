@@ -195,7 +195,6 @@ public:
 				return last_motion;
 				break;
 		}
-
 	}
 
 	void update(float delta) override {

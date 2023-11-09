@@ -6,7 +6,7 @@ hitAttributeEXT HitResult
     vec3 normal;
 } hitResult;
 
-vec2 gems_intersections(vec3 orig, vec3 dir, vec3 center, float radius)
+vec2 sphereIntersections(vec3 orig, vec3 dir, vec3 center, float radius)
 {
     vec3 f = orig - center;
     float a = dot(dir, dir);
@@ -33,7 +33,7 @@ void main()
     vec3 s = vec3(length(transform[0].xyz), length(transform[1].xyz), length(transform[2].xyz));
     vec3 half_s = s * 0.5;
 
-    vec2 ts = gems_intersections(gl_WorldRayOriginEXT, gl_WorldRayDirectionEXT, p, half_s.x);
+    vec2 ts = sphereIntersections(gl_WorldRayOriginEXT, gl_WorldRayDirectionEXT, p, half_s.x);
 
     if (ts.x > 0.0)
     {

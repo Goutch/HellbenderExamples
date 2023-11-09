@@ -53,8 +53,7 @@ void onAppPresent() {
 
 int main() {
 	ApplicationInfo app_info{};
-	app_info.hardware_flags = HARDWARE_FLAG_NONE;
-	app_info.name = "Hellbender";
+	app_info.name = "3D Model Viewer";
 	Application::init(app_info);
 	//-----------------------SETUP--------------------
 

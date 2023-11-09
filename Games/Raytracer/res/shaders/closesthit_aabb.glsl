@@ -5,8 +5,6 @@
 #include "common.glsl"
 //------------------------------------ UNIFORMS ------------------------------------
 
-
-
 hitAttributeEXT HitResult
 {
     vec3 normal;

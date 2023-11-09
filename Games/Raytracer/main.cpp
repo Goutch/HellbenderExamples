@@ -40,12 +40,13 @@ void onAppUpdate(float delta) {
 
 void onAppPresent() {
 	std::vector<Texture *> present_images;
-	if (main_scene != nullptr && main_scene->isActive() && main_scene->getMainCameraTexture() != nullptr) {
-		present_images.push_back(main_scene->getMainCameraTexture());
-	}
 	if (ui_scene != nullptr && ui_scene->isActive() && ui_scene->getMainCameraTexture() != nullptr) {
 		present_images.push_back(ui_scene->getMainCameraTexture());
 	}
+	if (main_scene != nullptr && main_scene->isActive() && main_scene->getMainCameraTexture() != nullptr) {
+		present_images.push_back(main_scene->getMainCameraTexture());
+	}
+
 	PresentCmdInfo present_info;
 	present_info.image_count = present_images.size();
 	present_info.images = present_images.data();
@@ -54,19 +55,13 @@ void onAppPresent() {
 
 int main() {
 	ApplicationInfo app_info{};
-	app_info.hardware_flags = HARDWARE_FLAG_GPU_REQUIRE_RTX_CAPABILITIES |
-							  HARDWARE_FLAG_GPU_REQUIRE_DESCRIPTOR_INDEXING_CAPABILITIES;
+	app_info.vulkan_version = HBE::VULKAN_VERSION_1_1;
+	app_info.required_extension_flags = VULKAN_REQUIRED_EXTENSION_RTX |
+										VULKAN_REQUIRED_EXTENSION_DESCRIPTOR_INDEXING;
 	app_info.name = "Raytracer";
 	Application::init(app_info);
 	//-----------------------SETUP--------------------
 	{
-		//-----------------------tests-------------------
-		//main_scene = new TriangleScene();
-		//main_scene = new CubeScene();
-		//ModelScene load_model_scene = ModelScene();
-		//ui_scene= new TextScene();
-		//ui_scene = new OrderedRenderingScene();
-
 		//-----------------------projects-----------------
 		main_scene = new RaytracingScene();
 		//Pathfinder pathfinder;

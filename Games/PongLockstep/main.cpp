@@ -37,12 +37,14 @@ namespace PongLockstep {
 }
 
 int main() {
+	Log::message("Server? (y/n)");
 	std::string input = "";
 	std::cin >> input;
-	if (input == "server") {
+	if (input == "y") {
 		PongLockstep::startServer();
 		return 0;
 	}
+
 	ApplicationInfo app_info{};
 	app_info.name = "Pong";
 	Application::init(app_info);
