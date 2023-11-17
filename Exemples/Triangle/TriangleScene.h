@@ -11,13 +11,11 @@ class TriangleScene : public Scene {
 	Shader *fragment_shader;
 	GraphicPipeline *pipeline;
 	GraphicPipelineInstance *pipeline_instance;
-
+	Entity triangle_entity;
 public:
 
-	TriangleScene() :Scene() {
+	TriangleScene() : Scene() {
 		createResources();
-		Entity e = createEntity3D();
-		attach<Transform>(e.getHandle());
 		setupScene();
 	}
 
@@ -31,14 +29,12 @@ public:
 
 	void setupScene() {
 		Entity camera_entity = createEntity3D();
-		camera_entity.attach<Transform>();
-		camera_entity.attach<Camera2D>().layer_mask = 2;
+		camera_entity.attach<Camera2D>();
 		setCameraEntity(camera_entity);
 
-		Entity triangle_entity = createEntity3D();
+		triangle_entity = createEntity3D();
 		MeshRenderer &triangle_renderer = triangle_entity.attach<MeshRenderer>();
 		triangle_renderer.mesh = triangle_mesh;
-		triangle_renderer.layer = 2;
 		triangle_renderer.pipeline_instance = pipeline_instance;
 	}
 

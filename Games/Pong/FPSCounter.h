@@ -139,10 +139,6 @@ namespace Pong {
 			pipeline_info.render_target = render_target;
 			text_pipeline = Resources::createGraphicPipeline(pipeline_info);
 
-			pipeline_info.attribute_infos = &VERTEX_ATTRIBUTE_INFO_POSITION3D;
-			pipeline_info.flags = 0;
-			pipeline_info.render_target = render_target;
-
 
 			GraphicPipelineInstanceInfo pipeline_instance_info{};
 			pipeline_instance_info.flags = GRAPHIC_PIPELINE_INSTANCE_FLAG_NONE;

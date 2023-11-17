@@ -20,10 +20,9 @@ void onAppUpdate(float delta) {
 
 int main() {
 	ApplicationInfo app_info{};
-	app_info.name = "Raytracer";
+	app_info.name = "Triangle";
 	Application::init(app_info);
 	//-----------------------SETUP--------------------
-
 	{
 		//-----------------------Games--------------------
 		TriangleScene triangleScene = TriangleScene();
