@@ -2,7 +2,9 @@
 
 #include "string"
 #include "Commands.h"
-#include "HBE/core/utility/Event.h"
+#include "Event.h"
+
+using namespace utils;
 using namespace HBE;
 namespace PongLockstep {
 	struct ClientInfo {
@@ -29,7 +31,9 @@ namespace PongLockstep {
 		~Client();
 
 		bool connect(int timeout_ms);
+
 		bool disconnect();
+
 		bool send(const PacketInfo &packet_info);
 	};
 

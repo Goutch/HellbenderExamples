@@ -5,7 +5,6 @@
 #include "BallSystem.h"
 #include "PaddleSystem.h"
 #include "Games/Pong/PongGame.h"
-
 namespace Pong {
 	BallSystem::BallSystem(PongGameScene *scene, PongGameState &game_state, AudioClipInstance *bounce_sound, RenderTarget *render_target) : System(scene) {
 		this->game_scene = scene;

@@ -4,7 +4,6 @@
 #include "Systems/PaddleSystem.h"
 #include "PongGame.h"
 
-
 namespace PongLockstep {
 
 	Area &PongGameScene::getArea() {

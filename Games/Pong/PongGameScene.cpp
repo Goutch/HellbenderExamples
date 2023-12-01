@@ -3,8 +3,6 @@
 #include "Games/Pong/Systems/BallSystem.h"
 #include "Games/Pong/Systems/PaddleSystem.h"
 #include "PongGame.h"
-
-
 namespace Pong {
 
 	Area &PongGameScene::getArea() {
