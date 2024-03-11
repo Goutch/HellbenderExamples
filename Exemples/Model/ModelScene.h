@@ -11,7 +11,7 @@ public:
 
 	void update(float delta) {
 		for (int i = 0; i < 2; i++) {
-			entitites[i].get<Transform>().rotate(glm::vec3(0, delta, 0));
+			entitites[i].get<Transform>()->rotate(glm::vec3(0, delta, 0));
 		}
 	}
 
@@ -64,21 +64,21 @@ public:
 		//-------------------SCENE CREATION--------------------------------------
 
 		Entity camera_entity = createEntity3D();
-		Camera &camera = camera_entity.attach<Camera>();
-		camera.setRenderTarget(Graphics::getDefaultRenderTarget());
+		Camera *camera = camera_entity.attach<Camera>();
+		camera->setRenderTarget(Graphics::getDefaultRenderTarget());
 		setCameraEntity(camera_entity);
 
 		auto teapot = createEntity3D();
-		ModelRenderer &teapot_renderer = teapot.attach<ModelRenderer>();
-		teapot.get<Transform>().translate(vec3(2.5, 0, -5));
-		teapot.get<Transform>().setLocalScale(vec3(0.1));
-		teapot_renderer.model = teapot_model;
+		ModelRenderer *teapot_renderer = teapot.attach<ModelRenderer>();
+		teapot.get<Transform>()->translate(vec3(2.5, 0, -5));
+		teapot.get<Transform>()->setLocalScale(vec3(0.1));
+		teapot_renderer->model = teapot_model;
 
 
 		auto dragon = createEntity3D();
-		ModelRenderer &dragon_renderer = dragon.attach<ModelRenderer>();
-		dragon.get<Transform>().translate(vec3(-2.5, 0, -5));
-		dragon_renderer.model = dragon_model;
+		ModelRenderer *dragon_renderer = dragon.attach<ModelRenderer>();
+		dragon.get<Transform>()->translate(vec3(-2.5, 0, -5));
+		dragon_renderer->model = dragon_model;
 
 		entitites[0] = teapot;
 		entitites[1] = dragon;

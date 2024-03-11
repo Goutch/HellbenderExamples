@@ -32,7 +32,8 @@ void onAppUpdate(float delta) {
 				cam.detach<CameraController>();
 			} else {
 				Input::setCursorVisible(false);
-				cam.attach<CameraController>();
+				CameraController *controller = cam.attach<CameraController>();
+				controller->invert_y = true;
 			}
 		}
 	}
@@ -57,7 +58,7 @@ int main() {
 	ApplicationInfo app_info{};
 	app_info.vulkan_version = HBE::VULKAN_VERSION_1_1;
 	app_info.required_extension_flags = VULKAN_REQUIRED_EXTENSION_RTX |
-										VULKAN_REQUIRED_EXTENSION_DESCRIPTOR_INDEXING;
+	                                    VULKAN_REQUIRED_EXTENSION_DESCRIPTOR_INDEXING;
 	app_info.name = "Raytracer";
 	Application::init(app_info);
 	//-----------------------SETUP--------------------

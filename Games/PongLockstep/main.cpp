@@ -44,6 +44,10 @@ int main() {
 		PongLockstep::startServer();
 		return 0;
 	}
+	if(input == "n") {
+		Log::message("Enter server IP: ");
+		std::cin >> input;
+	}
 
 	ApplicationInfo app_info{};
 	app_info.name = "Pong";

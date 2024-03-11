@@ -7,20 +7,20 @@ namespace Pong {
 
 	void PongUIScene::OnWindowSizeChange(Window *window) {
 		render_target->setResolution(window->getWidth(), window->getHeight());
-		score_left_entity.get<Transform>().setPosition(vec3((window->getWidth() / 4.0), window->getHeight() - 20, 0));
-		score_right_entity.get<Transform>().setPosition(vec3(((window->getWidth() * 3) / 4.0), window->getHeight() - 20, 0));
+		score_left_entity.get<Transform>()->setPosition(vec3((window->getWidth() / 4.0), window->getHeight() - 20, 0));
+		score_right_entity.get<Transform>()->setPosition(vec3(((window->getWidth() * 3) / 4.0), window->getHeight() - 20, 0));
 
-		score_right_entity.get<Transform>().setLocalScale(vec3(SCORE_TEXT_SIZE, SCORE_TEXT_SIZE, 1));
-		score_right_entity.get<Transform>().setLocalScale(vec3(SCORE_TEXT_SIZE, SCORE_TEXT_SIZE, 1));
+		score_right_entity.get<Transform>()->setLocalScale(vec3(SCORE_TEXT_SIZE, SCORE_TEXT_SIZE, 1));
+		score_right_entity.get<Transform>()->setLocalScale(vec3(SCORE_TEXT_SIZE, SCORE_TEXT_SIZE, 1));
 	}
 
 	Entity PongUIScene::createScore(GraphicPipelineInstance *pipeline_instance, Mesh *text) {
 		Entity score = createEntity3D();
-		MeshRenderer &score_renderer = score.attach<MeshRenderer>();
-		score_renderer.pipeline_instance = pipeline_instance;
-		score_renderer.mesh = text;
-		score_renderer.ordered = true;
-		score.get<Transform>().setLocalScale(vec3(SCORE_TEXT_SIZE, SCORE_TEXT_SIZE, 1));
+		MeshRenderer *score_renderer = score.attach<MeshRenderer>();
+		score_renderer->pipeline_instance = pipeline_instance;
+		score_renderer->mesh = text;
+		score_renderer->ordered = true;
+		score.get<Transform>()->setLocalScale(vec3(SCORE_TEXT_SIZE, SCORE_TEXT_SIZE, 1));
 
 		return score;
 	}
@@ -84,8 +84,8 @@ namespace Pong {
 
 	void PongUIScene::setupScene() {
 		Entity camera_entity = createEntity3D();
-		PixelCamera &camera = camera_entity.attach<PixelCamera>();
-		camera.setRenderTarget(render_target);
+		PixelCamera *camera = camera_entity.attach<PixelCamera>();
+		camera->setRenderTarget(render_target);
 
 		score_left_entity = createScore(left_text_pipeline_instance, score_left_mesh);
 		score_right_entity = createScore(right_text_pipeline_instance, score_right_mesh);
@@ -93,9 +93,9 @@ namespace Pong {
 		last_score_left = game_state->score_left;
 		last_score_right = game_state->score_right;
 
-		score_left_entity.get<Transform>().setPosition(vec3(((render_target->getResolution().x) / 4.0), render_target->getResolution().y - 20, 0));
+		score_left_entity.get<Transform>()->setPosition(vec3(((render_target->getResolution().x) / 4.0), render_target->getResolution().y - 20, 0));
 
-		score_right_entity.get<Transform>().setPosition(vec3(((render_target->getResolution().x * 3) / 4.0), render_target->getResolution().y - 20, 0));
+		score_right_entity.get<Transform>()->setPosition(vec3(((render_target->getResolution().x * 3) / 4.0), render_target->getResolution().y - 20, 0));
 	}
 
 	void PongUIScene::updateUI(float delta) {

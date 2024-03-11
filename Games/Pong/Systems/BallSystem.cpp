@@ -102,10 +102,10 @@ namespace Pong {
 			vec2 create_pos = Input::getNormalizedMousePosition();
 			create_pos -= vec2(0.5f, 0.5f);
 			create_pos.y *= -1;
-			Camera2D &camera = game_scene->getCameraEntity().get<Camera2D>();
-			create_pos.x *= camera.aspectRatio();
-			create_pos.x *= camera.getZoomRatio();
-			create_pos.y *= camera.getZoomRatio();
+			Camera2D *camera = game_scene->getCameraEntity().get<Camera2D>();
+			create_pos.x *= camera->aspectRatio();
+			create_pos.x *= camera->getZoomRatio();
+			create_pos.y *= camera->getZoomRatio();
 			game_scene->createBall(create_pos, vec2(Random::floatRange(-10, 10), Random::floatRange(-10, 10)));
 		}
 		if (Input::getKey(KEY_MOUSE_BUTTON_RIGHT)) {
@@ -113,10 +113,10 @@ namespace Pong {
 			delete_pos = Input::getNormalizedMousePosition();
 			delete_pos -= vec2(0.5f, 0.5f);
 			delete_pos.y *= -1;
-			Camera2D &camera = game_scene->getCameraEntity().get<Camera2D>();
-			delete_pos.x *= camera.aspectRatio();
-			delete_pos.x *= camera.getZoomRatio();
-			delete_pos.y *= camera.getZoomRatio();
+			Camera2D *camera = game_scene->getCameraEntity().get<Camera2D>();
+			delete_pos.x *= camera->aspectRatio();
+			delete_pos.x *= camera->getZoomRatio();
+			delete_pos.y *= camera->getZoomRatio();
 		}
 
 		if (Input::getKeyDown(KEY_P)) {

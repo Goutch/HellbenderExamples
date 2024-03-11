@@ -34,38 +34,38 @@ namespace Pong {
 	Entity PongGameScene::createBall(vec2 position, vec2 velocity) {
 		Entity ball = createEntity3D();
 
-		BallComponent &ballComponent = ball.attach<BallComponent>();
-		ballComponent.velocity = velocity;
-		ballComponent.radius = 0.2;
-		ball.get<Transform>().setPosition(vec3(position, 0));
-		ball.get<Transform>().setLocalScale(vec3(ballComponent.radius));
+		BallComponent *ballComponent = ball.attach<BallComponent>();
+		ballComponent->velocity = velocity;
+		ballComponent->radius = 0.2;
+		ball.get<Transform>()->setPosition(vec3(position, 0));
+		ball.get<Transform>()->setLocalScale(vec3(ballComponent->radius));
 
 		return ball;
 	}
 
 	Entity PongGameScene::createPaddle(vec3 position, KEY up_key, KEY down_key, GraphicPipelineInstance *paddle_pipeline_instance) {
 		Entity paddle = createEntity3D();
-		MeshRenderer &paddle_renderer = paddle.attach<MeshRenderer>();
-		paddle_renderer.mesh = quad_mesh;
-		paddle_renderer.layer = 0;
-		paddle_renderer.pipeline_instance = paddle_pipeline_instance;
+		MeshRenderer *paddle_renderer = paddle.attach<MeshRenderer>();
+		paddle_renderer->mesh = quad_mesh;
+		paddle_renderer->layer = 0;
+		paddle_renderer->pipeline_instance = paddle_pipeline_instance;
 
-		PaddleComponent &paddleComponent = paddle.attach<PaddleComponent>();
-		paddleComponent.speed = 10;
-		paddleComponent.size_x = 0.3;
-		paddleComponent.size_y = 2.0;
-		paddleComponent.down_key = down_key;
-		paddleComponent.up_key = up_key;
+		PaddleComponent *paddleComponent = paddle.attach<PaddleComponent>();
+		paddleComponent->speed = 10;
+		paddleComponent->size_x = 0.3;
+		paddleComponent->size_y = 2.0;
+		paddleComponent->down_key = down_key;
+		paddleComponent->up_key = up_key;
 
-		paddle.get<Transform>().setPosition(position);
+		paddle.get<Transform>()->setPosition(position);
 
 		return paddle;
 	}
 
 	void PongGameScene::setupScene() {
 		Entity camera_entity = createEntity3D();
-		Camera2D &camera = camera_entity.attach<Camera2D>();
-		camera.setRenderTarget(render_target);
+		Camera2D *camera = camera_entity.attach<Camera2D>();
+		camera->setRenderTarget(render_target);
 
 		for (int i = 0; i < 1; ++i) {
 			createBall(vec2(0, 0),
@@ -149,19 +149,19 @@ namespace Pong {
 
 	void PongGameScene::onRenderTargetResolutionChange(RenderTarget *render_target) {
 		Entity camera_entity = getCameraEntity();
-		Camera2D &camera = camera_entity.get<Camera2D>();
+		Camera2D *camera = camera_entity.get<Camera2D>();
 
-		float height = camera.getZoomRatio();
-		float width = height * camera.aspectRatio();
+		float height = camera->getZoomRatio();
+		float width = height * camera->aspectRatio();
 
 		game_area = Area{{-width / 2.0f, -height / 2.0f},
 						 {width,         height}};
 
-		vec3 paddle_left_position = paddle_left_entity.get<Transform>().position();
-		vec3 paddle_right_position = paddle_right_entity.get<Transform>().position();
+		vec3 paddle_left_position = paddle_left_entity.get<Transform>()->position();
+		vec3 paddle_right_position = paddle_right_entity.get<Transform>()->position();
 		paddle_left_position.x = -game_area.size.x / 2 + 1;
 		paddle_right_position.x = game_area.size.x / 2 - 1;
-		paddle_left_entity.get<Transform>().setPosition(paddle_left_position);
-		paddle_right_entity.get<Transform>().setPosition(paddle_right_position);
+		paddle_left_entity.get<Transform>()->setPosition(paddle_left_position);
+		paddle_right_entity.get<Transform>()->setPosition(paddle_right_position);
 	}
 }

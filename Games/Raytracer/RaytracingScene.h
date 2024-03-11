@@ -87,7 +87,6 @@ private:
 	mat4 last_camera_matrices[2] = {mat4(1.0), mat4(1.0)};
 public:
 
-
 	void createFrameBuffers(uint32_t width, uint32_t height) {
 		for (Texture *albedo: history_albedo) {
 			delete albedo;
@@ -124,8 +123,8 @@ public:
 	void onResolutionChange(RenderTarget *rt) {
 		createFrameBuffers(rt->getResolution().x, rt->getResolution().y);
 
-		Camera &camera = getCameraEntity().get<Camera>();
-		camera.setRenderTarget(rt);
+		Camera *camera = getCameraEntity().get<Camera>();
+		camera->setRenderTarget(rt);
 	}
 
 
@@ -149,8 +148,8 @@ public:
 			motion_history_buffer[i] = history_motion[f];
 		}
 
-		mat4 camera_projection = camera_entity.get<Camera>().projection;
-		mat4 camera_view = camera_entity.get<Transform>().world();
+		mat4 camera_projection = camera_entity.get<Camera>()->projection;
+		mat4 camera_view = camera_entity.get<Transform>()->world();
 
 		resources.pipeline_instance->setUniform("frame", &frame, Graphics::getCurrentFrame());
 		resources.pipeline_instance->setTexture("outputAlbedo", output_texture, Graphics::getCurrentFrame(), 0);
@@ -467,8 +466,8 @@ public:
 
 		Entity camera_entity = createEntity3D();
 		camera_entity.attach<Camera>();
-		camera_entity.get<Camera>().setRenderTarget(Graphics::getDefaultRenderTarget());
-		camera_entity.get<Camera>().active = false;
+		camera_entity.get<Camera>()->setRenderTarget(Graphics::getDefaultRenderTarget());
+		camera_entity.get<Camera>()->active = false;
 		setCameraEntity(camera_entity);
 
 		Graphics::getDefaultRenderTarget()->onResolutionChange.subscribe(this, &RaytracingScene::onResolutionChange);

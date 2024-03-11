@@ -56,18 +56,17 @@ public:
 
 	void createCube() {
 		Entity cube_entity = createEntity3D();
-		MeshRenderer &cube_renderer = cube_entity.attach<MeshRenderer>();
-		cube_renderer.mesh = cube_mesh;
-		cube_renderer.pipeline_instance = pipeline_instance;
-		cube_renderer.layer = 2;
-		cube_entity.get<Transform>().translate(vec3(0, 0, -5));
+		MeshRenderer *cube_renderer = cube_entity.attach<MeshRenderer>();
+		cube_renderer->mesh = cube_mesh;
+		cube_renderer->pipeline_instance = pipeline_instance;
+		cube_entity.get<Transform>()->translate(vec3(0, 0, -5));
 	}
 
 	void setupScene() {
 		createCube();
 
 		Entity camera_entity = createEntity3D();
-		camera_entity.attach<Camera>().layer_mask = 2;
+		camera_entity.attach<Camera>();
 
 		vec4 c = vec4(1, 0, 0, 1);
 		pipeline_instance->setUniform("material", &c);

@@ -37,18 +37,18 @@ namespace PongLockstep {
 
 	Entity PongGameScene::createBall(vec2fix16 position, vec2fix16 velocity) {
 		Entity ball = createEntity3D();
-		MeshRenderer &ball_renderer = ball.attach<MeshRenderer>();
-		ball_renderer.mesh = quad_mesh;
-		ball_renderer.layer = 0;
-		ball_renderer.pipeline_instance = ball_pipeline_instance;
+		MeshRenderer *ball_renderer = ball.attach<MeshRenderer>();
+		ball_renderer->mesh = quad_mesh;
+		ball_renderer->layer = 0;
+		ball_renderer->pipeline_instance = ball_pipeline_instance;
 
-		BallComponent &ballComponent = ball.attach<BallComponent>();
-		ballComponent.velocity = velocity;
-		ballComponent.radius = fix16(2) / fix16(10);
+		BallComponent *ballComponent = ball.attach<BallComponent>();
+		ballComponent->velocity = velocity;
+		ballComponent->radius = fix16(2) / fix16(10);
 
-		ballComponent.position = position;
-		ball.get<Transform>().setLocalScale(vec3(static_cast<float>(ballComponent.radius),
-												 static_cast<float>(ballComponent.radius),
+		ballComponent->position = position;
+		ball.get<Transform>()->setLocalScale(vec3(static_cast<float>(ballComponent->radius),
+												 static_cast<float>(ballComponent->radius),
 												 1));
 
 		return ball;
@@ -56,28 +56,28 @@ namespace PongLockstep {
 
 	Entity PongGameScene::createPaddle(vec3 position, KEY up_key, KEY down_key, GraphicPipelineInstance *paddle_pipeline_instance, uint32_t client_id) {
 		Entity paddle = createEntity3D();
-		MeshRenderer &paddle_renderer = paddle.attach<MeshRenderer>();
-		paddle_renderer.mesh = quad_mesh;
-		paddle_renderer.layer = 0;
-		paddle_renderer.pipeline_instance = paddle_pipeline_instance;
+		MeshRenderer *paddle_renderer = paddle.attach<MeshRenderer>();
+		paddle_renderer->mesh = quad_mesh;
+		paddle_renderer->layer = 0;
+		paddle_renderer->pipeline_instance = paddle_pipeline_instance;
 
-		PaddleComponent &paddleComponent = paddle.attach<PaddleComponent>();
-		paddleComponent.speed = fix16(10);
-		paddleComponent.size_x = fix16(3) / 10;
-		paddleComponent.size_y = fix16(2);
-		paddleComponent.down_key = down_key;
-		paddleComponent.up_key = up_key;
-		paddleComponent.client_id = client_id;
+		PaddleComponent *paddleComponent = paddle.attach<PaddleComponent>();
+		paddleComponent->speed = fix16(10);
+		paddleComponent->size_x = fix16(3) / 10;
+		paddleComponent->size_y = fix16(2);
+		paddleComponent->down_key = down_key;
+		paddleComponent->up_key = up_key;
+		paddleComponent->client_id = client_id;
 
-		paddle.get<Transform>().setPosition(position);
+		paddle.get<Transform>()->setPosition(position);
 
 		return paddle;
 	}
 
 	void PongGameScene::setupScene() {
 		Entity camera_entity = createEntity3D();
-		Camera2D &camera = camera_entity.attach<Camera2D>();
-		camera.setRenderTarget(render_target);
+		Camera2D *camera = camera_entity.attach<Camera2D>();
+		camera->setRenderTarget(render_target);
 
 		createBall(vec2fix16(0, 0), vec2fix16(10, 10));
 		paddle_left_entity = createPaddle(vec3{-game_area.size.x / 2 + 1, 0, 0},
@@ -161,15 +161,15 @@ namespace PongLockstep {
 
 	void PongGameScene::onRenderTargetResolutionChange(RenderTarget *render_target) {
 		Entity camera_entity = getCameraEntity();
-		Camera2D &camera = camera_entity.get<Camera2D>();
+		Camera2D *camera = camera_entity.get<Camera2D>();
 
-		fix16 height = fix16(camera.getZoomRatio());
-		fix16 width = height * fix16(camera.aspectRatio());
+		fix16 height = fix16(camera->getZoomRatio());
+		fix16 width = height * fix16(camera->aspectRatio());
 
 		game_area = Area{{-width / 2, -height / 2},
 						 {width,      height}};
 
-		paddle_left_entity.get<PaddleComponent>().position.x = -game_area.size.x / 2 + 1;
-		paddle_right_entity.get<PaddleComponent>().position.x = game_area.size.x / 2 - 1;
+		paddle_left_entity.get<PaddleComponent>()->position.x = -game_area.size.x / 2 + 1;
+		paddle_right_entity.get<PaddleComponent>()->position.x = game_area.size.x / 2 - 1;
 	}
 }

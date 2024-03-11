@@ -33,9 +33,9 @@ public:
 		setCameraEntity(camera_entity);
 
 		triangle_entity = createEntity3D();
-		MeshRenderer &triangle_renderer = triangle_entity.attach<MeshRenderer>();
-		triangle_renderer.mesh = triangle_mesh;
-		triangle_renderer.pipeline_instance = pipeline_instance;
+		MeshRenderer *triangle_renderer = triangle_entity.attach<MeshRenderer>();
+		triangle_renderer->mesh = triangle_mesh;
+		triangle_renderer->pipeline_instance = pipeline_instance;
 	}
 
 	void createResources() {

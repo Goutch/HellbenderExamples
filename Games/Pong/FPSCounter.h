@@ -69,9 +69,9 @@ namespace Pong {
 		}
 
 		void onResolutionChange(RenderTarget *render_target) {
-			text_entity.get<Transform>().setLocalScale(vec3(20));
+			text_entity.get<Transform>()->setLocalScale(vec3(20));
 
-			text_entity.get<Transform>().setPosition(vec3(
+			text_entity.get<Transform>()->setPosition(vec3(
 					0,
 					render_target->getResolution().y,
 					0.0f));
@@ -106,13 +106,13 @@ namespace Pong {
 		void setupScene() {
 
 			text_entity = scene->createEntity3D();
-			MeshRenderer &text_renderer = text_entity.attach<MeshRenderer>();
+			MeshRenderer *text_renderer = text_entity.attach<MeshRenderer>();
 
-			text_renderer.pipeline_instance = text_pipeline_instance;
-			text_renderer.mesh = text_mesh;
-			text_renderer.ordered = true;
+			text_renderer->pipeline_instance = text_pipeline_instance;
+			text_renderer->mesh = text_mesh;
+			text_renderer->ordered = true;
 
-			text_entity.get<Transform>().translate(vec3(1.0f, 1.0f, 0.0f));
+			text_entity.get<Transform>()->translate(vec3(1.0f, 1.0f, 0.0f));
 		}
 
 		void createResources() {

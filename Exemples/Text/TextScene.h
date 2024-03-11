@@ -110,15 +110,15 @@ private:
 	void setupScene() {
 		Entity camera_entity = createEntity3D();
 
-		Camera2D &camera2D = camera_entity.attach<Camera2D>();
-		camera2D.setZoomRatio(35.0f);
+		Camera2D *camera2D = camera_entity.attach<Camera2D>();
+		camera2D->setZoomRatio(35.0f);
 
 		Entity text_entity = createEntity3D();
-		MeshRenderer &text_renderer = text_entity.attach<MeshRenderer>();
-		text_renderer.ordered = true;
-		text_renderer.layer = 0;
-		text_renderer.pipeline_instance = text_pipeline_instance;
-		text_renderer.mesh = text_mesh;
+		MeshRenderer *text_renderer = text_entity.attach<MeshRenderer>();
+		text_renderer->ordered = true;
+		text_renderer->layer = 0;
+		text_renderer->pipeline_instance = text_pipeline_instance;
+		text_renderer->mesh = text_mesh;
 
 
 		//text_entity.get<Transform>().setLocalScale(vec3(100, 100, 1));
