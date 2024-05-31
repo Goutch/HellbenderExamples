@@ -63,9 +63,7 @@ int main() {
 	Application::init(app_info);
 	//-----------------------SETUP--------------------
 	{
-		//-----------------------projects-----------------
 		main_scene = new RaytracingScene();
-		//Pathfinder pathfinder;
 
 		//-----------------------EVENTS------------------
 		Application::onUpdate.subscribe(&onAppUpdate);

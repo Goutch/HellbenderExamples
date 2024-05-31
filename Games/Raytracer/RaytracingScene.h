@@ -49,15 +49,15 @@ private:
 	AABBAccelerationStructure *mesh_acceleration_structure;
 	StorageBuffer *material_buffer;
 	const std::array<MaterialData, 9> materials = {{
-														   {vec4(0.95, 0.95, 0.95, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//white
-														   {vec4(0.5, 0.5, 0.5, 0.0), vec4(10.0, 10.0, 10.0, 10.0), 1.0},//light
-														   {vec4(0.95, 0, 0, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//red
-														   {vec4(0, 0.95, 0, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//green
-														   {vec4(0, 0, 0.95, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//blue
-														   {vec4(0.9, 0.9, 0.1, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//yellow
-														   {vec4(0.9, 0.1, 0.9, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//purple
-														   {vec4(0.2, 0.2, 0.2, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 0.4},//metalic
-														   {vec4(0.8, 0.8, 0.8, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 0.0}}//mirror
+			                                               {vec4(0.95, 0.95, 0.95, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//white
+			                                               {vec4(0.5, 0.5, 0.5, 0.0), vec4(10.0, 10.0, 10.0, 10.0), 1.0},//light
+			                                               {vec4(0.95, 0, 0, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//red
+			                                               {vec4(0, 0.95, 0, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//green
+			                                               {vec4(0, 0, 0.95, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//blue
+			                                               {vec4(0.9, 0.9, 0.1, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//yellow
+			                                               {vec4(0.9, 0.1, 0.9, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//purple
+			                                               {vec4(0.2, 0.2, 0.2, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 0.4},//metalic
+			                                               {vec4(0.8, 0.8, 0.8, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 0.0}}//mirror
 	};
 	enum MATERIALS {
 		MATERIAL_WHITE = 0,
@@ -109,7 +109,7 @@ public:
 		info.height = height;
 		info.format = IMAGE_FORMAT_RGBA32F;
 		info.flags = IMAGE_FLAG_SHADER_WRITE |
-					 IMAGE_FLAG_FILTER_NEAREST;
+		             IMAGE_FLAG_FILTER_NEAREST;
 
 		for (uint32_t i = 0; i < HYSTORY_COUNT; i++) {
 			history_albedo.push_back(Resources::createTexture(info));
@@ -371,73 +371,73 @@ public:
 		t = glm::translate(t, vec3(10, 2.5, 7));
 		t = glm::scale(t, vec3(5, 5, 1));
 		acceleration_structure_instances.push_back(AccelerationStructureInstance{0,
-																				 0,
-																				 t,
-																				 ACCELERATION_STRUCTURE_TYPE_AABB,
-																				 MATERIAL_GREEN});
+		                                                                         0,
+		                                                                         t,
+		                                                                         ACCELERATION_STRUCTURE_TYPE_AABB,
+		                                                                         MATERIAL_GREEN});
 		t = mat4(1.0f);
 		t = glm::translate(t, vec3(10, 2.5, 13));
 		t = glm::scale(t, vec3(5, 5, 1));
 		acceleration_structure_instances.push_back(AccelerationStructureInstance{0,
-																				 0,
-																				 t,
-																				 ACCELERATION_STRUCTURE_TYPE_AABB,
-																				 MATERIAL_RED});
+		                                                                         0,
+		                                                                         t,
+		                                                                         ACCELERATION_STRUCTURE_TYPE_AABB,
+		                                                                         MATERIAL_RED});
 		t = mat4(1.0f);
 		t = glm::translate(t, vec3(7, 2.5, 10));
 		t = glm::scale(t, vec3(1, 5, 5));
 		acceleration_structure_instances.push_back(AccelerationStructureInstance{0,
-																				 0,
-																				 t,
-																				 ACCELERATION_STRUCTURE_TYPE_AABB,
-																				 MATERIAL_WHITE});
+		                                                                         0,
+		                                                                         t,
+		                                                                         ACCELERATION_STRUCTURE_TYPE_AABB,
+		                                                                         MATERIAL_WHITE});
 		t = mat4(1.0f);
 		t = glm::translate(t, vec3(13, 2.5, 10));
 		t = glm::scale(t, vec3(1, 5, 5));
 		acceleration_structure_instances.push_back(AccelerationStructureInstance{0,
-																				 0,
-																				 t,
-																				 ACCELERATION_STRUCTURE_TYPE_AABB,
-																				 MATERIAL_WHITE});
+		                                                                         0,
+		                                                                         t,
+		                                                                         ACCELERATION_STRUCTURE_TYPE_AABB,
+		                                                                         MATERIAL_WHITE});
 
 		//floor
 		t = mat4(1.0f);
 		t = glm::translate(t, vec3(10, -0.5, 10));
 		t = glm::scale(t, vec3(5, 1, 5));
 		acceleration_structure_instances.push_back(AccelerationStructureInstance{0,
-																				 0,
-																				 t,
-																				 ACCELERATION_STRUCTURE_TYPE_AABB,
-																				 MATERIAL_WHITE});
+		                                                                         0,
+		                                                                         t,
+		                                                                         ACCELERATION_STRUCTURE_TYPE_AABB,
+		                                                                         MATERIAL_WHITE});
 		//ceiling
 		t = mat4(1.0f);
 		t = glm::translate(t, vec3(10, 5.5, 10));
 		t = glm::scale(t, vec3(5, 1, 5));
 		acceleration_structure_instances.push_back(AccelerationStructureInstance{0,
-																				 0,
-																				 t,
-																				 ACCELERATION_STRUCTURE_TYPE_AABB,
-																				 MATERIAL_WHITE});
+		                                                                         0,
+		                                                                         t,
+		                                                                         ACCELERATION_STRUCTURE_TYPE_AABB,
+		                                                                         MATERIAL_WHITE});
 
 		//Ceiling light
 		t = mat4(1.0f);
 		t = glm::translate(t, vec3(10, 5.4, 10));
 		t = glm::scale(t, vec3(2, 1, 2));
 		acceleration_structure_instances.push_back(AccelerationStructureInstance{0,
-																				 0,
-																				 t,
-																				 ACCELERATION_STRUCTURE_TYPE_AABB,
-																				 MATERIAL_LIGHT});
+		                                                                         0,
+		                                                                         t,
+		                                                                         ACCELERATION_STRUCTURE_TYPE_AABB,
+		                                                                         MATERIAL_LIGHT});
 
 		//sphere
 		t = mat4(1.0f);
 		t = glm::translate(t, vec3(10, 1, 10));
 		t = glm::scale(t, vec3(1, 1, 1));
 		acceleration_structure_instances.push_back(AccelerationStructureInstance{0,
-																				 1,
-																				 t,
-																				 ACCELERATION_STRUCTURE_TYPE_AABB,
-																				 MATERIAL_WHITE});
+		                                                                         1,
+		                                                                         t,
+		                                                                         ACCELERATION_STRUCTURE_TYPE_AABB,
+		                                                                         MATERIAL_WHITE});
 
 		RootAccelerationStructureInfo root_acceleration_structure_info{};
 		root_acceleration_structure_info.aabb_acceleration_structures = aabb_acceleration_structures.data();
@@ -460,9 +460,7 @@ public:
 		pathtracing_pipeline_instance_info.raytracing_pipeline = pathtracing_resources.pipeline;
 		pathtracing_resources.pipeline_instance = Resources::createRaytracingPipelineInstance(pathtracing_pipeline_instance_info);
 		pathtracing_resources.pipeline_instance->setAccelerationStructure("topLevelAS", root_acceleration_structure);
-		pathtracing_resources.pipeline_instance->setStorageBuffer("materials", material_buffer);
-		//StorageBuffer **pbuffers = storage_buffer_array.data();
-		//pathtracing_resources.pipeline_instance->setStorageBufferArray("vertices", pbuffers, storage_buffer_array.size());
+		pathtracing_resources.pipeline_instance->setStorageBuffer("materials", material_buffer,material_buffer->getCount(),0);
 
 		Entity camera_entity = createEntity3D();
 		camera_entity.attach<Camera>();
@@ -471,19 +469,6 @@ public:
 		setCameraEntity(camera_entity);
 
 		Graphics::getDefaultRenderTarget()->onResolutionChange.subscribe(this, &RaytracingScene::onResolutionChange);
-
-		/*nrd::MemoryAllocatorInterface *allocator;
-		nrd::DenoiserCreationDesc denoiserCreationDesc{};
-		denoiserCreationDesc.enableValidation = true;
-		denoiserCreationDesc.memoryAllocatorInterface = *allocator;
-
-		nrd::Denoiser *denoiser;
-
-		nrd::CreateDenoiser(denoiserCreationDesc, denoiser);
-		nrd::DestroyDenoiser(denoiser);
-
-		nrd::*/
-
 	}
 };
 
