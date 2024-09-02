@@ -362,7 +362,7 @@ public:
 		}
 		for (uint32_t i = 0; i < 7; ++i) {
 			mat4 t(1.0f);
-			t = glm::translate(t, vec3(0, 0, 2 * (i + 1)));
+			t = glm::translate(t, vec3((2 * i) + 1, 0, 0));
 			acceleration_structure_instances.push_back(
 					AccelerationStructureInstance{0, 1, t, ACCELERATION_STRUCTURE_TYPE_AABB, i % 7});
 		}
@@ -460,12 +460,13 @@ public:
 		pathtracing_pipeline_instance_info.raytracing_pipeline = pathtracing_resources.pipeline;
 		pathtracing_resources.pipeline_instance = Resources::createRaytracingPipelineInstance(pathtracing_pipeline_instance_info);
 		pathtracing_resources.pipeline_instance->setAccelerationStructure("topLevelAS", root_acceleration_structure);
-		pathtracing_resources.pipeline_instance->setStorageBuffer("materials", material_buffer,material_buffer->getCount(),0);
+		pathtracing_resources.pipeline_instance->setStorageBuffer("materials", material_buffer, material_buffer->getCount(), 0);
 
 		Entity camera_entity = createEntity3D();
 		camera_entity.attach<Camera>();
 		camera_entity.get<Camera>()->setRenderTarget(Graphics::getDefaultRenderTarget());
 		camera_entity.get<Camera>()->active = false;
+		camera_entity.attach<CameraController>()->invert_y = true;
 		setCameraEntity(camera_entity);
 
 		Graphics::getDefaultRenderTarget()->onResolutionChange.subscribe(this, &RaytracingScene::onResolutionChange);
