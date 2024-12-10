@@ -4,7 +4,6 @@ set(CMAKE_CXX_STANDARD 20)
 project(App CXX)
 include_directories(".")
 
-
 set(HBE_OUTPUT_DIR ${CMAKE_BINARY_DIR}/out)
 
 add_subdirectory("HBE/")

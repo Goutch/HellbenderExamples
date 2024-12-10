@@ -6,9 +6,9 @@ using namespace HBE;
 
 class TextScene : public Scene {
 	std::string text_str = "Hello world!\n"
-						   "This is a test of the text rendering system\n"
-						   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{};':\",./<>?\\|`~\n"
-						   "You can try to type something now...\n";
+	                       "This is a test of the text rendering system\n"
+	                       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{};':\",./<>?\\|`~\n"
+	                       "You can try to type something now...\n";
 
 	Shader *text_vertex_shader;
 	Shader *text_fragment_shader;
@@ -22,14 +22,14 @@ class TextScene : public Scene {
 		float total_width;
 		float total_height;
 		Geometry::updateText(*text_mesh,
-							 text_str,
-							 *font,
-							 1.0,
-							 0.5,
-							 TEXT_ALIGNMENT_CENTER,
-							 PIVOT_CENTER,
-							 total_width,
-							 total_height);
+		                     text_str,
+		                     *font,
+		                     1.0,
+		                     0.5,
+		                     TEXT_ALIGNMENT_CENTER,
+		                     PIVOT_CENTER,
+		                     total_width,
+		                     total_height);
 
 	}
 
@@ -44,15 +44,29 @@ class TextScene : public Scene {
 			float total_width;
 			float total_height;
 			Geometry::updateText(*text_mesh,
-								 text_str,
-								 *font,
-								 1.0,
-								 0.5,
-								 TEXT_ALIGNMENT_CENTER,
-								 PIVOT_CENTER,
-								 total_width,
-								 total_height);
+			                     text_str,
+			                     *font,
+			                     1.0,
+			                     0.5,
+			                     TEXT_ALIGNMENT_CENTER,
+			                     PIVOT_CENTER,
+			                     total_width,
+			                     total_height);
 		}
+		if (Input::getKey(KEY_LEFT)) {
+			getCameraEntity().get<Transform>()->translate(vec3(-1 * delta, 0, 0));
+		}
+		if (Input::getKey(KEY_RIGHT)) {
+			getCameraEntity().get<Transform>()->translate(vec3(1 * delta, 0, 0));
+		}
+		if (Input::getKey(KEY_UP)) {
+			getCameraEntity().get<Transform>()->translate(vec3(0, 1 * delta, 0));
+		}
+		if (Input::getKey(KEY_DOWN)) {
+			getCameraEntity().get<Transform>()->translate(vec3(0, -1 * delta, 0));
+		}
+
+		getCameraEntity().get<Camera2D>()->setZoomRatio(getCameraEntity().get<Camera2D>()->getZoomRatio() + Input::getMouseWheelInput());
 	}
 
 private:
@@ -95,13 +109,13 @@ private:
 		float total_width;
 		float total_height;
 		text_mesh = Geometry::createText(text_str,
-										 *font,
-										 1.0,
-										 0.5,
-										 TEXT_ALIGNMENT_CENTER,
-										 PIVOT_CENTER,
-										 total_width,
-										 total_height);
+		                                 *font,
+		                                 1.0,
+		                                 0.5,
+		                                 TEXT_ALIGNMENT_CENTER,
+		                                 PIVOT_CENTER,
+		                                 total_width,
+		                                 total_height);
 
 		vec4 color = vec4(1, 1, 1, 1);
 		text_pipeline_instance->setUniform("material", &color);

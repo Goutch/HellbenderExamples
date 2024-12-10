@@ -17,10 +17,23 @@ void onAppUpdate(float delta) {
 	}
 }
 
+bool foo(int a, int b) {
+	return a > b;
+}
+
+class Test {
+public:
+	int add(int a, int b) {
+		return a + b;
+	}
+};
 
 int main() {
+
 	ApplicationInfo app_info{};
 	app_info.name = "Model";
+	app_info.required_extension_flags = VULKAN_REQUIRED_EXTENSION_DESCRIPTOR_INDEXING;
+	app_info.vulkan_version = VULKAN_VERSION_1_2;
 	Application::init(app_info);
 	//-----------------------SETUP--------------------
 	{
