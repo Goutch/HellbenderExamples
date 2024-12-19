@@ -51,8 +51,8 @@ public:
 		model_info.flags = MODEL_FLAG_NONE;
 		model_info.parser = &parser;
 
-		model_info.path = "/models/cube/Cube.gltf";
-		Model *sponza_model = Resources::createModel(model_info, "sponza");
+		model_info.path = "/models/sponza/Sponza.gltf";
+		//Model *sponza_model = Resources::createModel(model_info, "sponza");
 
 		model_info.path = "/models/teapot.gltf";
 		Model *teapot_model = Resources::createModel(model_info, "teapot");
@@ -72,17 +72,17 @@ public:
 		camera->setRenderTarget(Graphics::getDefaultRenderTarget());
 		setCameraEntity(camera_entity);
 
-		//auto teapot = createEntity3D();
-		//ModelRenderer *teapot_renderer = teapot.attach<ModelRenderer>();
-		//teapot.get<Transform>()->translate(vec3(2.5, 0, -5));
-		//teapot.get<Transform>()->setLocalScale(vec3(0.1));
-		//teapot_renderer->model = teapot_model;
+		auto teapot = createEntity3D();
+		ModelRenderer *teapot_renderer = teapot.attach<ModelRenderer>();
+		teapot.get<Transform>()->translate(vec3(2.5, 0, -5));
+		teapot.get<Transform>()->setLocalScale(vec3(0.1));
+		teapot_renderer->model = teapot_model;
 
-		auto sponza = createEntity3D();
-		ModelRenderer *sponza_renderer = sponza.attach<ModelRenderer>();
-		sponza_renderer->model = sponza_model;
+		//auto sponza = createEntity3D();
+		//ModelRenderer *sponza_renderer = sponza.attach<ModelRenderer>();
+		//sponza_renderer->model = sponza_model;
 		//sponza.get<Transform>()->setLocalScale(vec3(0.01));
-		sponza.get<Transform>()->setLocalScale(vec3(10));
+
 		//auto dragon = createEntity3D();
 		//ModelRenderer *dragon_renderer = dragon.attach<ModelRenderer>();
 		//dragon.get<Transform>()->translate(vec3(-2.5, 0, -5));
