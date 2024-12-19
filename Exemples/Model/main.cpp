@@ -33,7 +33,7 @@ int main() {
 	ApplicationInfo app_info{};
 	app_info.name = "Model";
 	app_info.required_extension_flags = VULKAN_REQUIRED_EXTENSION_DESCRIPTOR_INDEXING;
-	app_info.vulkan_version = VULKAN_VERSION_1_2;
+	app_info.vulkan_version = VULKAN_VERSION_1_3;
 	Application::init(app_info);
 	//-----------------------SETUP--------------------
 	{
