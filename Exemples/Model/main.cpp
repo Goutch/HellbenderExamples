@@ -31,6 +31,8 @@ public:
 int main() {
 
 	ApplicationInfo app_info{};
+	app_info.start_width = 1280;
+	app_info.start_height = 720;
 	app_info.name = "Model";
 	app_info.required_extension_flags = VULKAN_REQUIRED_EXTENSION_DESCRIPTOR_INDEXING;
 	app_info.vulkan_version = VULKAN_VERSION_1_3;

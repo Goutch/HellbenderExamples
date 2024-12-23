@@ -50,25 +50,29 @@ private:
 	StorageBuffer *material_buffer;
 	const std::array<MaterialData, 9> materials = {{
 			                                               {vec4(0.95, 0.95, 0.95, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//white
-			                                               {vec4(0.5, 0.5, 0.5, 0.0), vec4(10.0, 10.0, 10.0, 10.0), 1.0},//light
 			                                               {vec4(0.95, 0, 0, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//red
 			                                               {vec4(0, 0.95, 0, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//green
 			                                               {vec4(0, 0, 0.95, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//blue
 			                                               {vec4(0.9, 0.9, 0.1, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//yellow
 			                                               {vec4(0.9, 0.1, 0.9, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 1.0},//purple
-			                                               {vec4(0.2, 0.2, 0.2, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 0.4},//metalic
-			                                               {vec4(0.8, 0.8, 0.8, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 0.0}}//mirror
+			                                               {vec4(0.8, 0.8, 0.8, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 0.4},//metalic
+			                                               {vec4(0.8, 0.8, 0.8, 0.0), vec4(0.0, 0.0, 0.0, 0.0), 0.0},//mirror
+			                                               {vec4(0.5, 0.5, 0.5, 0.0), vec4(10.0, 10.0, 10.0, 10.0), 1.0}}//light
 	};
 	enum MATERIALS {
 		MATERIAL_WHITE = 0,
-		MATERIAL_LIGHT = 1,
-		MATERIAL_RED = 2,
-		MATERIAL_GREEN = 3,
-		MATERIAL_BLUE = 4,
-		MATERIAL_YELLOW = 5,
-		MATERIAL_PURPLE = 6,
-		MATERIAL_METALIC = 7,
-		MATERIAL_MIRROR = 8,
+		MATERIAL_RED = 1,
+		MATERIAL_GREEN = 2,
+		MATERIAL_BLUE = 3,
+		MATERIAL_YELLOW = 4,
+		MATERIAL_PURPLE = 5,
+		MATERIAL_METALIC = 6,
+		MATERIAL_MIRROR = 7,
+		MATERIAL_LIGHT = 9,
+	};
+	enum SHADER_GROUP_TYPE {
+		SHADER_GROUP_TYPE_BOX = 0,
+		SHADER_GROUP_TYPE_SPHERE = 1,
 	};
 	std::vector<Texture *> history_albedo;
 	std::vector<Texture *> history_normal_depth;
@@ -108,8 +112,10 @@ public:
 		info.width = width;
 		info.height = height;
 		info.format = IMAGE_FORMAT_RGBA32F;
-		info.flags = IMAGE_FLAG_SHADER_WRITE |
-		             IMAGE_FLAG_FILTER_NEAREST;
+		info.flags = IMAGE_FLAG_SHADER_WRITE;
+		info.sampler_info.address_mode = TEXTURE_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		info.sampler_info.filter = TEXTURE_SAMPLER_FILTER_TYPE_NEAREST;
+		info.sampler_info.flags = TEXTURE_SAMPLER_FLAG_NONE;
 
 		for (uint32_t i = 0; i < HYSTORY_COUNT; i++) {
 			history_albedo.push_back(Resources::createTexture(info));
@@ -292,81 +298,33 @@ public:
 
 	}
 
+	void createSphereField(std::vector<AccelerationStructureInstance> &acceleration_structure_instances, int n) {
+		for (uint32_t i = 0; i < n; ++i) {
+			float radius = Random::floatRange(0.5, 2.5);
+			Transform t{};
+			t.translate(vec3(Random::floatRange(-50, 50), radius, Random::floatRange(-50, 50)));
+			t.setLocalScale(vec3(radius * 2.0f));
+			acceleration_structure_instances.push_back(
+					AccelerationStructureInstance{0, SHADER_GROUP_TYPE_SPHERE, t.local(), ACCELERATION_STRUCTURE_TYPE_AABB, Random::uintRange(0, 8)});
+		}
+	}
 
-	RaytracingScene() {
-		createFrameBuffers(Graphics::getDefaultRenderTarget()->getResolution().x, Graphics::getDefaultRenderTarget()->getResolution().y);
-
-		blue_noise = Texture::load("/textures/BlueNoiseRGB.png", IMAGE_FORMAT_RGBA8, IMAGE_FLAG_FILTER_NEAREST | IMAGE_FLAG_NO_SAMPLER);
-
-		ShaderInfo shader_info{};
-
-		shader_info.stage = SHADER_STAGE_RAY_GEN;
-		shader_info.path = "shaders/raygen_pathtrace.glsl";
-		pathtracing_resources.raygen_shader = Resources::createShader(shader_info);
-
-
-		shader_info.stage = SHADER_STAGE_RAY_MISS;
-		shader_info.path = "shaders/miss_pathtrace.glsl";
-		pathtracing_resources.miss_shaders.push_back(Resources::createShader(shader_info));
-
-
-		shader_info.stage = SHADER_STAGE_CLOSEST_HIT;
-		shader_info.path = "shaders/closesthit_aabb.glsl";
-		pathtracing_resources.hit_shaders.push_back(Resources::createShader(shader_info));
-
-
-		shader_info.stage = SHADER_STAGE_INTERSECTION;
-		shader_info.path = "shaders/intersect_box.glsl";
-		pathtracing_resources.hit_shaders.push_back(Resources::createShader(shader_info));
-		shader_info.path = "shaders/intersect_sphere.glsl";
-		pathtracing_resources.hit_shaders.push_back(Resources::createShader(shader_info));
-
-		pathtracing_resources.shader_groups.push_back({0, -1, 1});//box
-		pathtracing_resources.shader_groups.push_back({0, -1, 2});//sphere
-
-		RaytracingPipelineInfo pathtracing_pipeline_info{};
-
-		pathtracing_pipeline_info.raygen_shader = pathtracing_resources.raygen_shader;
-		pathtracing_pipeline_info.miss_shaders = pathtracing_resources.miss_shaders.data();
-		pathtracing_pipeline_info.miss_shader_count = pathtracing_resources.miss_shaders.size();
-		pathtracing_pipeline_info.hit_shaders = pathtracing_resources.hit_shaders.data();
-		pathtracing_pipeline_info.hit_shader_count = pathtracing_resources.hit_shaders.size();
-
-		pathtracing_pipeline_info.shader_group_count = pathtracing_resources.shader_groups.size();
-		pathtracing_pipeline_info.shader_groups = pathtracing_resources.shader_groups.data();
-		pathtracing_pipeline_info.max_recursion_depth = 16;
-
-		pathtracing_resources.pipeline = Resources::createRaytracingPipeline(pathtracing_pipeline_info);
-
-		AABBAccelerationStructureInfo aabb__acceleration_structure_info{};
-		aabb__acceleration_structure_info.max = vec3(0.5, 0.5, 0.5);
-		aabb__acceleration_structure_info.min = vec3(-0.5, -0.5, -0.5);
-
-		aabb_acceleration_structure = Resources::createAABBAccelerationStructure(aabb__acceleration_structure_info);
-
-		std::vector<AABBAccelerationStructure *> aabb_acceleration_structures{aabb_acceleration_structure};
-
-		std::vector<AccelerationStructureInstance> acceleration_structure_instances{};
-
-		mat4 transform_aabb_floor(1.0f);
-		transform_aabb_floor = glm::translate(transform_aabb_floor, vec3(0, -1, 0));
-		transform_aabb_floor = glm::scale(transform_aabb_floor, vec3(100, 1, 100));
-		acceleration_structure_instances.push_back(AccelerationStructureInstance{0, 0, transform_aabb_floor, ACCELERATION_STRUCTURE_TYPE_AABB, 0});
-
-
-		for (uint32_t i = 0; i < 7; ++i) {
+	void createMaterialDisplay(std::vector<AccelerationStructureInstance> &acceleration_structure_instances) {
+		for (uint32_t i = 0; i < 10; ++i) {
 			mat4 t(1.0f);
 			t = glm::translate(t, vec3(2 * (i + 1), 0, 0));
 			acceleration_structure_instances.push_back(
-					AccelerationStructureInstance{0, 0, t, ACCELERATION_STRUCTURE_TYPE_AABB, i});
+					AccelerationStructureInstance{0, SHADER_GROUP_TYPE_BOX, t, ACCELERATION_STRUCTURE_TYPE_AABB, i});
 		}
 		for (uint32_t i = 0; i < 7; ++i) {
 			mat4 t(1.0f);
 			t = glm::translate(t, vec3((2 * i) + 1, 0, 0));
 			acceleration_structure_instances.push_back(
-					AccelerationStructureInstance{0, 1, t, ACCELERATION_STRUCTURE_TYPE_AABB, i % 7});
+					AccelerationStructureInstance{0, SHADER_GROUP_TYPE_SPHERE, t, ACCELERATION_STRUCTURE_TYPE_AABB, i % 7});
 		}
+	}
 
+	void createCornelBox(std::vector<AccelerationStructureInstance> &acceleration_structure_instances) {
 		mat4 t(1.0f);
 		t = glm::translate(t, vec3(10, 2.5, 7));
 		t = glm::scale(t, vec3(5, 5, 1));
@@ -438,6 +396,69 @@ public:
 		                                                                         t,
 		                                                                         ACCELERATION_STRUCTURE_TYPE_AABB,
 		                                                                         MATERIAL_WHITE});
+	}
+
+	RaytracingScene() {
+		createFrameBuffers(Graphics::getDefaultRenderTarget()->getResolution().x, Graphics::getDefaultRenderTarget()->getResolution().y);
+
+		blue_noise = Texture::load("/textures/BlueNoiseRGB.png", IMAGE_FORMAT_RGBA8_UINT, IMAGE_FLAG_NO_SAMPLER);
+
+		ShaderInfo shader_info{};
+
+		shader_info.stage = SHADER_STAGE_RAY_GEN;
+		shader_info.path = "shaders/raygen_pathtrace.glsl";
+		pathtracing_resources.raygen_shader = Resources::createShader(shader_info);
+
+
+		shader_info.stage = SHADER_STAGE_RAY_MISS;
+		shader_info.path = "shaders/miss_pathtrace.glsl";
+		pathtracing_resources.miss_shaders.push_back(Resources::createShader(shader_info));
+
+
+		shader_info.stage = SHADER_STAGE_CLOSEST_HIT;
+		shader_info.path = "shaders/closesthit_aabb.glsl";
+		pathtracing_resources.hit_shaders.push_back(Resources::createShader(shader_info));
+
+
+		shader_info.stage = SHADER_STAGE_INTERSECTION;
+		shader_info.path = "shaders/intersect_box.glsl";
+		pathtracing_resources.hit_shaders.push_back(Resources::createShader(shader_info));
+		shader_info.path = "shaders/intersect_sphere.glsl";
+		pathtracing_resources.hit_shaders.push_back(Resources::createShader(shader_info));
+
+		pathtracing_resources.shader_groups.push_back({0, -1, 1});//box
+		pathtracing_resources.shader_groups.push_back({0, -1, 2});//sphere
+
+		RaytracingPipelineInfo pathtracing_pipeline_info{};
+
+		pathtracing_pipeline_info.raygen_shader = pathtracing_resources.raygen_shader;
+		pathtracing_pipeline_info.miss_shaders = pathtracing_resources.miss_shaders.data();
+		pathtracing_pipeline_info.miss_shader_count = pathtracing_resources.miss_shaders.size();
+		pathtracing_pipeline_info.hit_shaders = pathtracing_resources.hit_shaders.data();
+		pathtracing_pipeline_info.hit_shader_count = pathtracing_resources.hit_shaders.size();
+
+		pathtracing_pipeline_info.shader_group_count = pathtracing_resources.shader_groups.size();
+		pathtracing_pipeline_info.shader_groups = pathtracing_resources.shader_groups.data();
+		pathtracing_pipeline_info.max_recursion_depth = 16;
+
+		pathtracing_resources.pipeline = Resources::createRaytracingPipeline(pathtracing_pipeline_info);
+
+		AABBAccelerationStructureInfo aabb__acceleration_structure_info{};
+		aabb__acceleration_structure_info.max = vec3(0.5, 0.5, 0.5);
+		aabb__acceleration_structure_info.min = vec3(-0.5, -0.5, -0.5);
+
+		aabb_acceleration_structure = Resources::createAABBAccelerationStructure(aabb__acceleration_structure_info);
+
+		std::vector<AABBAccelerationStructure *> aabb_acceleration_structures{aabb_acceleration_structure};
+
+		std::vector<AccelerationStructureInstance> acceleration_structure_instances{};
+
+		mat4 transform_aabb_floor(1.0f);
+		transform_aabb_floor = glm::translate(transform_aabb_floor, vec3(0, -0.5, 0));
+		transform_aabb_floor = glm::scale(transform_aabb_floor, vec3(1000, 1, 1000));
+		acceleration_structure_instances.push_back(AccelerationStructureInstance{0, SHADER_GROUP_TYPE_BOX, transform_aabb_floor, ACCELERATION_STRUCTURE_TYPE_AABB, 0});
+
+		createSphereField(acceleration_structure_instances, 200);
 
 		RootAccelerationStructureInfo root_acceleration_structure_info{};
 		root_acceleration_structure_info.aabb_acceleration_structures = aabb_acceleration_structures.data();
@@ -462,11 +483,13 @@ public:
 		pathtracing_resources.pipeline_instance->setAccelerationStructure("topLevelAS", root_acceleration_structure);
 		pathtracing_resources.pipeline_instance->setStorageBuffer("materials", material_buffer, material_buffer->getCount(), 0);
 
+
 		Entity camera_entity = createEntity3D();
 		camera_entity.attach<Camera>();
 		camera_entity.get<Camera>()->setRenderTarget(Graphics::getDefaultRenderTarget());
 		camera_entity.get<Camera>()->active = false;
 		camera_entity.attach<CameraController>()->invert_y = true;
+		camera_entity.get<Transform>()->translate(vec3(0, 1, 0));
 		setCameraEntity(camera_entity);
 
 		Graphics::getDefaultRenderTarget()->onResolutionChange.subscribe(this, &RaytracingScene::onResolutionChange);
