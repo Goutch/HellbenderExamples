@@ -111,7 +111,7 @@ public:
 		TextureInfo info{};
 		info.width = width;
 		info.height = height;
-		info.format = IMAGE_FORMAT_RGBA32F;
+		info.data_format = IMAGE_FORMAT_RGBA32F;
 		info.flags = IMAGE_FLAG_SHADER_WRITE;
 		info.sampler_info.address_mode = TEXTURE_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 		info.sampler_info.filter = TEXTURE_SAMPLER_FILTER_TYPE_NEAREST;
