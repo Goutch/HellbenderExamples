@@ -406,24 +406,24 @@ public:
 		ShaderInfo shader_info{};
 
 		shader_info.stage = SHADER_STAGE_RAY_GEN;
-		shader_info.path = "shaders/raygen_pathtrace.glsl";
+		shader_info.path = "shaders/raytracing/raygen/raygen.glsl";
 		pathtracing_resources.raygen_shader = Resources::createShader(shader_info);
 
 
 		shader_info.stage = SHADER_STAGE_RAY_MISS;
-		shader_info.path = "shaders/miss_pathtrace.glsl";
+		shader_info.path = "shaders/raytracing/miss/miss.glsl";
 		pathtracing_resources.miss_shaders.push_back(Resources::createShader(shader_info));
 
 
 		shader_info.stage = SHADER_STAGE_CLOSEST_HIT;
-		shader_info.path = "shaders/closesthit_aabb.glsl";
+		shader_info.path = "shaders/raytracing/closestHit/closest_hit.glsl";
 		pathtracing_resources.hit_shaders.push_back(Resources::createShader(shader_info));
 
 
 		shader_info.stage = SHADER_STAGE_INTERSECTION;
-		shader_info.path = "shaders/intersect_box.glsl";
+		shader_info.path = "shaders/raytracing/intersect/intersect_box.glsl";
 		pathtracing_resources.hit_shaders.push_back(Resources::createShader(shader_info));
-		shader_info.path = "shaders/intersect_sphere.glsl";
+		shader_info.path = "shaders/raytracing/intersect/intersect_sphere.glsl";
 		pathtracing_resources.hit_shaders.push_back(Resources::createShader(shader_info));
 
 		pathtracing_resources.shader_groups.push_back({0, -1, 1});//box

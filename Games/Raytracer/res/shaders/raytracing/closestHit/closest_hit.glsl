@@ -2,16 +2,17 @@
 #extension GL_EXT_ray_tracing: enable
 #extension GL_EXT_nonuniform_qualifier: enable
 #extension GL_GOOGLE_include_directive : require
-#include "common.glsl"
-//------------------------------------ UNIFORMS ------------------------------------
 
+#define PAYLOAD_IN
+#include "../common.glsl"
 hitAttributeEXT HitResult
 {
     vec3 normal;
 } hitResult;
+#include "../raytracing.glsl"
 
+//------------------------------------ UNIFORMS ------------------------------------
 
-#include "pathtrace.glsl"
 void main()
 {
     vec3 normal = hitResult.normal;

@@ -2,18 +2,8 @@
 #extension GL_EXT_ray_tracing : enable
 #extension GL_GOOGLE_include_directive : require
 #define SCALE 1000.0
-#include "common.glsl"
-
-layout(location = 0) rayPayloadInEXT PrimaryRayPayLoad
-{
-    vec3 color;
-    int bounce_count;
-    uint noise_sample_count;
-    uint rng_state;
-    bool hit_sky;
-    vec3 hit_normal;
-    float hit_t;
-} primaryRayPayload;
+#define PAYLOAD_IN
+#include "../common.glsl"
 
 const vec3 AMBIENT = vec3(0.1, 0.1, 0.1);
 const int SAMPLE_COUNT=8;
@@ -120,32 +110,11 @@ void main()
     }
     mix(vec3(1,1,1),sunColor,(dot(toLightDir,gl_WorldRayDirectionEXT)+1)/2.0);
 
-    primaryRayPayload.bounce_count++;
-    primaryRayPayload.color =sunColor;
-    primaryRayPayload.bounce_count--;
-    primaryRayPayload.hit_sky = true;
-    primaryRayPayload.hit_t = gl_RayTmaxEXT;
-    primaryRayPayload.hit_normal = -gl_WorldRayDirectionEXT;
-    /*  vec3 planet_center = gl_WorldRayOriginEXT;
-      planet_center.y=0;
+    primaryRayPayload.payload.bounce_count++;
+    primaryRayPayload.payload.color =sunColor;
+    primaryRayPayload.payload.bounce_count--;
+    primaryRayPayload.payload.hit_sky = true;
+    primaryRayPayload.payload.hit_t = gl_RayTmaxEXT;
+    primaryRayPayload.payload.hit_normal = -gl_WorldRayDirectionEXT;
 
-      vec3 origin =gl_WorldRayOriginEXT+vec3(0, PLANET_RADIUS, 0);
-
-      float atmosphere_end_t = raySphere(planet_center, ATMOSPHERE_RADIUS,origin, gl_WorldRayDirectionEXT).y;
-      vec3 atmosphere_end_position = gl_WorldRayOriginEXT+gl_WorldRayDirectionEXT*atmosphere_end_t;
-
-      float to_light_t = raySphere(atmosphere_end_position, ATMOSPHERE_RADIUS, atmosphere_end_position, toLightDir).y;
-
-
-
-      float ratio = (((atmosphere_end_position.y/2)+(gl_RayTmaxEXT/2))/gl_RayTmaxEXT);
-      vec3 sky_color = vec3(1-ratio, 0.3, ratio * 0.5);
-
-
-      primaryRayPayload.bounce_count++;
-      primaryRayPayload.color = (vec3(to_light_t)/ATMOSPHERE_RADIUS*2.0f)/primaryRayPayload.bounce_count;
-      primaryRayPayload.bounce_count--;
-      primaryRayPayload.hit_sky = true;
-      primaryRayPayload.hit_t = gl_RayTmaxEXT;
-      primaryRayPayload.hit_normal = -gl_WorldRayDirectionEXT;*/
 }
