@@ -5,11 +5,9 @@
 using namespace HBE;
 
 
-class ModelScene : public Scene
-{
+class ModelScene : public Scene {
 public:
-	ModelScene()
-	{
+	ModelScene() {
 		//-------------------RESOURCES CREATION--------------------------------------
 		ShaderInfo frag_info{SHADER_STAGE_FRAGMENT, "/shaders/defaults/PositionUVNormalTextured.frag"};
 		ShaderInfo vert_info{SHADER_STAGE_VERTEX, "/shaders/defaults/PositionUVNormal.vert"};
@@ -25,8 +23,13 @@ public:
 
 		attribute_infos.emplace_back();
 		attribute_infos[1].location = 1;
-		attribute_infos[1].size = sizeof(vec3);
+		attribute_infos[1].size = sizeof(vec2);
 		attribute_infos[1].flags = VERTEX_ATTRIBUTE_FLAG_NONE;
+
+		attribute_infos.emplace_back();
+		attribute_infos[2].location = 2;
+		attribute_infos[2].size = sizeof(vec3);
+		attribute_infos[2].flags = VERTEX_ATTRIBUTE_FLAG_NONE;
 
 		GraphicPipelineInfo pipeline_info{};
 		pipeline_info.attribute_infos = attribute_infos.data();
@@ -35,11 +38,11 @@ public:
 		pipeline_info.vertex_shader = vert;
 
 		pipeline_info.flags = GRAPHIC_PIPELINE_FLAG_FRONT_COUNTER_CLOCKWISE | //gltf primitives are counterclockwise
-			GRAPHIC_PIPELINE_FLAG_ALLOW_EMPTY_DESCRIPTOR;
-		GraphicPipeline* model_pipeline_2_sided = Resources::createGraphicPipeline(
-			pipeline_info, "MODEL_PIPELINE_2_SIDED");
+		                      GRAPHIC_PIPELINE_FLAG_ALLOW_EMPTY_DESCRIPTOR;
+		GraphicPipeline *model_pipeline_2_sided = Resources::createGraphicPipeline(
+				pipeline_info, "MODEL_PIPELINE_2_SIDED");
 		pipeline_info.flags |= GRAPHIC_PIPELINE_FLAG_CULL_BACK;
-		GraphicPipeline* model_pipeline = Resources::createGraphicPipeline(pipeline_info, "MODEL_PIPELINE");
+		GraphicPipeline *model_pipeline = Resources::createGraphicPipeline(pipeline_info, "MODEL_PIPELINE");
 
 		DefaultModelParserInfo parser_info{};
 		parser_info.graphic_pipeline = model_pipeline;
@@ -54,11 +57,11 @@ public:
 
 		Log::debug("Loading cube model");
 		model_info.path = "/models/cube/Cube.gltf";
-		Model *cube_model = Resources::createModel(model_info, "cube");
+		//Model *cube_model = Resources::createModel(model_info, "cube");
 
 		Log::debug("Loading sponza model");
 		model_info.path = "/models/sponza/Sponza.gltf";
-		//Model *sponza_model = Resources::createModel(model_info, "sponza");
+		Model *sponza_model = Resources::createModel(model_info, "sponza");
 
 		Log::debug("Loading teapot model");
 		model_info.path = "/models/teapot.gltf";
@@ -76,8 +79,8 @@ public:
 
 		//Create camera
 		Entity camera_entity = createEntity3D();
-		Camera* camera = camera_entity.attach<Camera>();
-		CameraController* camera_controller = camera_entity.attach<CameraController>();
+		Camera *camera = camera_entity.attach<Camera>();
+		CameraController *camera_controller = camera_entity.attach<CameraController>();
 		camera_controller->invert_y = true;
 		camera_controller->speed = 10;
 		camera->setRenderTarget(Graphics::getDefaultRenderTarget());
@@ -89,23 +92,16 @@ public:
 		//teapot.get<Transform>()->setLocalScale(vec3(0.1));
 		//teapot_renderer->model = teapot_model;
 
-		//auto sponza = createEntity3D();
-		//ModelRenderer *sponza_renderer = sponza.attach<ModelRenderer>();
-		//sponza_renderer->model = sponza_model;
-		//sponza.get<Transform>()->setLocalScale(vec3(0.01));
+		auto sponza = createEntity3D();
+		ModelRenderer *sponza_renderer = sponza.attach<ModelRenderer>();
+		sponza_renderer->model = sponza_model;
+		sponza.get<Transform>()->setLocalScale(vec3(1));
 
-		auto cube = createEntity3D();
-		ModelRenderer* cube_renderer = cube.attach<ModelRenderer>();
-		cube.get<Transform>()->translate(vec3(0, 0, -2));
-		cube.get<Transform>()->setLocalScale(vec3(0.5));
-		cube_renderer->model = cube_model;
-
-		//auto donut = createEntity3D();
-		//ModelRenderer *donut_renderer = donut.attach<ModelRenderer>();
-		//donut.get<Transform>()->translate(vec3(0, 0, -5));
-		//donut.get<Transform>()->setLocalScale(vec3(0.1));
-		//donut_renderer->model = donut_model;
-
+		//auto cube = createEntity3D();
+		//ModelRenderer *cube_renderer = cube.attach<ModelRenderer>();
+		//cube.get<Transform>()->translate(vec3(0, 0, -2));
+		//cube.get<Transform>()->setLocalScale(vec3(0.5));
+		//cube_renderer->model = cube_model;
 
 		//auto avocado = createEntity3D();
 		//ModelRenderer* avocado_renderer = avocado.attach<ModelRenderer>();
