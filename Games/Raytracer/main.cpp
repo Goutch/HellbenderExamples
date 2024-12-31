@@ -56,7 +56,7 @@ void onAppPresent() {
 
 int main() {
 	ApplicationInfo app_info{};
-	app_info.vulkan_version = HBE::VULKAN_VERSION_1_1;
+	app_info.vulkan_version = VULKAN_VERSION_1_1;
 	app_info.required_extension_flags = VULKAN_REQUIRED_EXTENSION_RTX |
 	                                    VULKAN_REQUIRED_EXTENSION_DESCRIPTOR_INDEXING;
 	app_info.start_width = 1280;
@@ -64,24 +64,22 @@ int main() {
 	app_info.name = "Raytracer";
 	Application::init(app_info);
 	//-----------------------SETUP--------------------
-	{
-		main_scene = new RaytracingScene();
+	main_scene = new RaytracingScene();
 
-		//-----------------------EVENTS------------------
-		Application::onUpdate.subscribe(&onAppUpdate);
-		Application::onPresent.subscribe(&onAppPresent);
-		//-----------------------LOOP--------------------
-		Application::run();
-		//-----------------------CLEANUP------------------
-		Application::onUpdate.unsubscribe(&onAppUpdate);
-		Application::onPresent.unsubscribe(&onAppPresent);
-		//-----------------------TERMINATE------------------
+	//-----------------------EVENTS------------------
+	Application::onUpdate.subscribe(&onAppUpdate);
+	Application::onPresent.subscribe(&onAppPresent);
+	//-----------------------LOOP--------------------
+	Application::run();
+	//-----------------------CLEANUP------------------
+	Application::onUpdate.unsubscribe(&onAppUpdate);
+	Application::onPresent.unsubscribe(&onAppPresent);
+	//-----------------------TERMINATE------------------
 
-		if (ui_scene != nullptr)
-			delete ui_scene;
-		if (main_scene != nullptr)
-			delete main_scene;
-	}
+	if (ui_scene != nullptr)
+		delete ui_scene;
+	if (main_scene != nullptr)
+		delete main_scene;
 	//delete pathfinder;
 	Application::terminate();
 }

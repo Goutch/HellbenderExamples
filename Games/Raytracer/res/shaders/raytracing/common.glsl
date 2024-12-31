@@ -2,7 +2,14 @@ struct MaterialData
 {
     vec4 albedo;
     vec4 emission;
+    int has_albedo;
+    int albedo_index;
     float roughness;
+};
+struct InstanceInfo
+{
+    uint material_index;
+    uint mesh_index;
 };
 
 struct PayloadData{
@@ -59,22 +66,24 @@ layout (binding = 11, set = 0) uniform LastCameraProperties
     mat4 view;
     mat4 projection;
 } last_cam;
-
-struct vertexUVNormal
+layout (binding = 12, set = 0, std430) readonly buffer InstanceInfos
 {
-    vec3 position;
-    vec2 uv;
-    vec3 normal;
-};
-layout (binding = 12, set = 1, std430) readonly buffer MeshesTexCoords
+    InstanceInfo infos[];
+} instances;
+layout (binding = 13, set = 0) uniform sampler2D textures[];
+layout (binding = 14, set = 1, std430) readonly buffer MeshesIndices
+{
+    uint indices[];
+} meshes_indices[];
+layout (binding = 15, set = 2, std430) readonly buffer MeshesTexCoords
 {
     vec2 coords[];
-} meshes_tex_coords;
+} meshes_tex_coords[];
 
-layout (binding = 13, set = 2, std430) readonly buffer MeshesNormals
+layout (binding = 16, set = 3, std430) readonly buffer MeshesNormals
 {
     vec2 normals[];
-} meshes_normals;
+} meshes_normals[];
 
 #ifdef PAYLOAD_IN
 layout (location = 0) rayPayloadInEXT PrimaryRayPayLoad

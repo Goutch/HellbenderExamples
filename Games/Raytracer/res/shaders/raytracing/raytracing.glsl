@@ -1,3 +1,4 @@
+//https://github.com/KhronosGroup/GLSL/blob/main/extensions/nv/GLSL_NV_ray_tracing.txt
 const float LIGHT_BIAS = 0.3;
 vec3 sampleBlueNoise(ivec2 coord)
 {
@@ -86,9 +87,10 @@ void trace(vec3 origin, vec3 dir, float tmax)
     tmax, //Tmax
     0);//payload location
 }
-
+//------------------------------------ UNIFORMS ------------------------------------
 void traceRays(vec3 normal)
 {
+    InstanceInfo instance_info = instances.infos[gl_InstanceID];
     vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
 
     primaryRayPayload.payload.bounce_count++;
@@ -101,10 +103,10 @@ void traceRays(vec3 normal)
     {
         numSamples = primaryRayPayload.payload.bounce_count==1?frame.sample_count:1;
     }
-    MaterialData material  = materials.materials[gl_InstanceCustomIndexEXT];
+    MaterialData material  = materials.materials[instance_info.material_index];
 
     vec3 to_light_dir= normalize(vec3(sin(frame.time), sin(frame.time), cos(frame.time)));
-    float light_dot_product=dot(hitResult.normal, to_light_dir);
+    float light_dot_product=dot(normal, to_light_dir);
     vec3 color =vec3(0.0);
     int num_sun_samples = 0;
     if (primaryRayPayload.payload.bounce_count<frame.max_bounces)
@@ -140,26 +142,26 @@ void traceRays(vec3 normal)
 
             if (bool(frame.use_blue_noise))
             {
-                newDir = RandomDiffuseVectorFromNoise(hitResult.normal);
+                newDir = RandomDiffuseVectorFromNoise(normal);
             }
             else
             {
-                newDir = RandomDiffuseVectorFromRNG(hitResult.normal);
+                newDir = RandomDiffuseVectorFromRNG(normal);
             }
 
             if (material.roughness<0.999)
             {
-                newDir = RandomSpecularVector(reflect(gl_WorldRayDirectionEXT, hitResult.normal), newDir, material.roughness);
+                newDir = RandomSpecularVector(reflect(gl_WorldRayDirectionEXT, normal), newDir, material.roughness);
             }
             trace(origin, newDir, 1000.0);
-            color += primaryRayPayload.payload.color*dot(hitResult.normal, newDir);
+            color += primaryRayPayload.payload.color*dot(normal, newDir);
 
         }
         color /= float(numSamples+num_sun_samples);
     }
 
     primaryRayPayload.payload.color = (material.emission.rgb) + (color*material.albedo.rgb);
-    primaryRayPayload.payload.hit_normal = hitResult.normal;
+    primaryRayPayload.payload.hit_normal = normal;
     primaryRayPayload.payload.hit_t = gl_HitTEXT;
     primaryRayPayload.payload.bounce_count = primaryRayPayload.payload.bounce_count-1;
 }

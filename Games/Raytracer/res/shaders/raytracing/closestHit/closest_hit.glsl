@@ -11,7 +11,6 @@ hitAttributeEXT HitResult
 } hitResult;
 #include "../raytracing.glsl"
 
-//------------------------------------ UNIFORMS ------------------------------------
 
 void main()
 {

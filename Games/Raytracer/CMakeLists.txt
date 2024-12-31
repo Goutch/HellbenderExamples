@@ -4,7 +4,10 @@ set(CMAKE_CXX_STANDARD 20)
 project(Raytracer CXX)
 
 add_executable(${PROJECT_NAME}
-        main.cpp)
+        main.cpp
+        RaytracingScene.cpp
+       RaytracingModelParser.cpp
+        Material.h)
 target_link_libraries(${PROJECT_NAME} PUBLIC HBE)
 target_include_directories(${PROJECT_NAME}
         PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
