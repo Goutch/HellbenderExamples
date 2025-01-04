@@ -10,6 +10,7 @@ struct InstanceInfo
 {
     uint material_index;
     uint mesh_index;
+    uint indices_size;
 };
 
 struct PayloadData{
@@ -55,39 +56,40 @@ layout (binding = 8, set = 0) uniform Frame {
     int use_blue_noise;
 } frame;
 
-layout (binding = 9, set = 0, std430) readonly buffer MaterialDataBuffer
-{
-    MaterialData materials[];
-} materials;
-
-layout (binding = 10, set = 0, rgba8ui) uniform readonly uimage2D blueNoise;
-layout (binding = 11, set = 0) uniform LastCameraProperties
+layout (binding = 9, set = 0, rgba8ui) uniform readonly uimage2D blueNoise;
+layout (binding = 10, set = 0) uniform LastCameraProperties
 {
     mat4 view;
     mat4 projection;
 } last_cam;
-layout (binding = 12, set = 0, std430) readonly buffer InstanceInfos
+layout (binding = 11, set = 1, std430) readonly buffer MaterialDataBuffer
+{
+    MaterialData materials[];
+} materials;
+layout (binding = 12, set = 2, std430) readonly buffer InstanceInfos
 {
     InstanceInfo infos[];
 } instances;
-layout (binding = 13, set = 0) uniform sampler2D textures[];
-layout (binding = 14, set = 1, std430) readonly buffer MeshesIndices
+layout (binding = 13, set = 3) uniform sampler2D textures[];
+
+layout (binding = 14, set = 4, std430) readonly buffer MeshIndicesBuffers
 {
     uint indices[];
-} meshes_indices[];
-layout (binding = 15, set = 2, std430) readonly buffer MeshesTexCoords
+} mesh_indices_buffers[];
+layout (binding = 15, set = 5, std430) readonly buffer MeshTexCoordsBuffers
 {
     vec2 coords[];
-} meshes_tex_coords[];
+} mesh_tex_coords_buffers[];
 
-layout (binding = 16, set = 3, std430) readonly buffer MeshesNormals
+layout (binding = 16, set = 6, std430) readonly buffer MeshNormalsBuffers
 {
-    vec2 normals[];
-} meshes_normals[];
+    float normals[];
+} mesh_normals_buffers[];
 
 #ifdef PAYLOAD_IN
 layout (location = 0) rayPayloadInEXT PrimaryRayPayLoad
 {
+
     PayloadData payload;
 } primaryRayPayload;
 #endif

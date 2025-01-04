@@ -63,7 +63,7 @@ vec2 raySphere(vec3 sphereCentre, float sphereRadius, vec3 rayOrigin, vec3 rayDi
 void main()
 {
     vec3 toLightDir = normalize(vec3(sin(frame.time), sin(frame.time), cos(frame.time)));
-    float sun_emision = max(pow(dot(toLightDir, gl_WorldRayDirectionEXT), E*20), 0);
+    float sun_emision = max(pow(dot(toLightDir, gl_WorldRayDirectionEXT), E*30), 0);
 
     float atmosphere_height = ATMOSPHERE_RADIUS-PLANET_RADIUS;
     vec3 wavelength = WAVELENGTHS*frame.scattering_multiplier;
@@ -81,7 +81,7 @@ void main()
     //float angle = asin(dot(toLightDir, gl_WorldRayDirectionEXT)/(length(toLightDir)*length(gl_WorldRayDirectionEXT)));
     float weight = 1.0;//(3.0*(1.0+pow(angle, 2.0)))/(16.0*PI);
 
-    vec3 sunColor =vec3(sun_emision, sun_emision*0.6, sun_emision*0.4)*2;
+    vec3 sunColor =vec3(sun_emision, sun_emision*0.8, sun_emision*0.6)*5;
 
     if (atmosphere_travel_t>0)
     {

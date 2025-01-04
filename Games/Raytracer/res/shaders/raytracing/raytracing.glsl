@@ -88,7 +88,7 @@ void trace(vec3 origin, vec3 dir, float tmax)
     0);//payload location
 }
 //------------------------------------ UNIFORMS ------------------------------------
-void traceRays(vec3 normal)
+void traceRays(vec3 normal, vec2 uvs)
 {
     InstanceInfo instance_info = instances.infos[gl_InstanceID];
     vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
@@ -160,7 +160,14 @@ void traceRays(vec3 normal)
         color /= float(numSamples+num_sun_samples);
     }
 
-    primaryRayPayload.payload.color = (material.emission.rgb) + (color*material.albedo.rgb);
+    vec4 materialColor = material.albedo;
+    if (material.has_albedo==1)
+    {
+        color *= texture(textures[nonuniformEXT(material.albedo_index)], uvs).rgb;
+    }
+
+
+    primaryRayPayload.payload.color = (material.emission.rgb) + (color*materialColor.rgb);
     primaryRayPayload.payload.hit_normal = normal;
     primaryRayPayload.payload.hit_t = gl_HitTEXT;
     primaryRayPayload.payload.bounce_count = primaryRayPayload.payload.bounce_count-1;

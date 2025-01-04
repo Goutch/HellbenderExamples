@@ -15,6 +15,6 @@ hitAttributeEXT HitResult
 void main()
 {
     vec3 normal = hitResult.normal;
-    traceRays(normal);
+    traceRays(normal, vec2(0, 0));
 }
 

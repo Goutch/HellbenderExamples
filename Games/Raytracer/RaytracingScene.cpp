@@ -78,7 +78,7 @@ RaytracingScene::RaytracingScene() {
 	transform_aabb_floor = glm::translate(transform_aabb_floor, vec3(0, -0.5, 0));
 	transform_aabb_floor = glm::scale(transform_aabb_floor, vec3(1000, 1, 1000));
 	acceleration_structure_instances.insert(acceleration_structure_instances.end(), sponza_model->getAccelerationStructureInstances().begin(), sponza_model->getAccelerationStructureInstances().end());
-	//acceleration_structure_instances.push_back(AccelerationStructureInstance{0, SHADER_GROUP_TYPE_BOX, transform_aabb_floor, ACCELERATION_STRUCTURE_TYPE_AABB, 0});
+	acceleration_structure_instances.push_back(AccelerationStructureInstance{0, SHADER_GROUP_TYPE_BOX, transform_aabb_floor, ACCELERATION_STRUCTURE_TYPE_AABB, 0});
 	createSphereField(200);
 	RootAccelerationStructureInfo root_acceleration_structure_info{};
 	root_acceleration_structure_info.aabb_acceleration_structures = aabb_acceleration_structures.data();
@@ -99,7 +99,7 @@ RaytracingScene::RaytracingScene() {
 
 	std::vector<InstanceInfo> instance_infos;
 	for (uint32_t i = 0; i < acceleration_structure_instances.size(); ++i) {
-		instance_infos.push_back({acceleration_structure_instances[i].custom_index, i});
+		instance_infos.push_back({acceleration_structure_instances[i].custom_index, i, 16});
 	}
 	StorageBufferInfo instances_storage_buffer_info{};
 	instances_storage_buffer_info.stride = sizeof(InstanceInfo);
@@ -110,22 +110,25 @@ RaytracingScene::RaytracingScene() {
 
 	std::vector<StorageBuffer *> normals;
 	std::vector<StorageBuffer *> indices;
+	std::vector<StorageBuffer *> uvs;
 	for (uint32_t i = 0; i < meshes.size(); i++) {
 		normals.push_back(meshes[i]->getAttributeStorageBuffer(2));
 		indices.push_back(meshes[i]->getIndicesStorageBuffer());
+		uvs.push_back(meshes[i]->getAttributeStorageBuffer(1));
 	}
-
 
 	RaytracingPipelineInstanceInfo pathtracing_pipeline_instance_info{};
 	pathtracing_pipeline_instance_info.raytracing_pipeline = raytracing_resources.pipeline;
 	raytracing_resources.pipeline_instance = Resources::createRaytracingPipelineInstance(pathtracing_pipeline_instance_info);
-	raytracing_resources.pipeline_instance->setAccelerationStructure("topLevelAS", root_acceleration_structure);
-	raytracing_resources.pipeline_instance->setStorageBuffer("materials", material_buffer, material_buffer->getCount(), 0);
-	raytracing_resources.pipeline_instance->setStorageBuffer("instances", instance_buffer, instance_buffer->getCount(), 0);
+
 	if (textures.size() > 0)
 		raytracing_resources.pipeline_instance->setTextureArray("textures", textures.data(), textures.size());
-	//raytracing_resources.pipeline_instance->setStorageBufferArray("meshes_normals", normals.data(), normals.size());
-	//raytracing_resources.pipeline_instance->setStorageBufferArray("meshes_indices", indices.data(), indices.size());
+	raytracing_resources.pipeline_instance->setStorageBuffer("materials", material_buffer, material_buffer->getCount(), 0);
+	raytracing_resources.pipeline_instance->setStorageBuffer("instances", instance_buffer, instance_buffer->getCount(), 0);
+	raytracing_resources.pipeline_instance->setAccelerationStructure("topLevelAS", root_acceleration_structure);
+	raytracing_resources.pipeline_instance->setStorageBufferArray("mesh_indices_buffers", indices.data(), indices.size(), -1);
+	raytracing_resources.pipeline_instance->setStorageBufferArray("mesh_normals_buffers", normals.data(), normals.size(), -1);
+	raytracing_resources.pipeline_instance->setStorageBufferArray("mesh_tex_coords_buffers", uvs.data(), uvs.size(), -1);
 
 	Entity camera_entity = createEntity3D();
 	camera_entity.attach<Camera>();

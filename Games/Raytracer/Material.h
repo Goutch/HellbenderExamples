@@ -13,4 +13,5 @@ struct MaterialData {
 struct InstanceInfo {
 	uint32_t material_index;
 	uint32_t mesh_index;
+	uint32_t indices_size;
 };

@@ -59,8 +59,8 @@ int main() {
 	app_info.vulkan_version = VULKAN_VERSION_1_1;
 	app_info.required_extension_flags = VULKAN_REQUIRED_EXTENSION_RTX |
 	                                    VULKAN_REQUIRED_EXTENSION_DESCRIPTOR_INDEXING;
-	app_info.start_width = 1280;
-	app_info.start_height = 720;
+	app_info.start_width = 1920;
+	app_info.start_height = 1080;
 	app_info.name = "Raytracer";
 	Application::init(app_info);
 	//-----------------------SETUP--------------------
