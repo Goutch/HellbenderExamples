@@ -2,8 +2,8 @@ struct MaterialData
 {
     vec4 albedo;
     vec4 emission;
-    int has_albedo;
     int albedo_index;
+    int normal_index;
     float roughness;
 };
 struct InstanceInfo
@@ -11,6 +11,12 @@ struct InstanceInfo
     uint material_index;
     uint mesh_index;
     uint indices_size;
+};
+
+struct CameraProperties
+{
+    mat4 transform;
+    mat4 projection;
 };
 
 struct PayloadData{
@@ -37,13 +43,12 @@ layout (binding = 3, set = 0, rgba32f) uniform image2D outputMotion;
 layout (binding = 4, set = 0, rgba32f) uniform image2D historyAlbedo[HISTORY_COUNT];
 layout (binding = 5, set = 0, rgba32f) uniform image2D historyNormalDepth[HISTORY_COUNT];
 layout (binding = 6, set = 0, rgba32f) uniform image2D historyMotion[HISTORY_COUNT];
+layout (binding = 7, set = 0) uniform CameraHistory
+{
+    CameraProperties properties[HISTORY_COUNT];
+} camera_history;
 #endif
 
-layout (binding = 7, set = 0) uniform CameraProperties
-{
-    mat4 view_inverse;
-    mat4 projection_inverse;
-} cam;
 
 
 layout (binding = 8, set = 0) uniform Frame {
@@ -57,31 +62,26 @@ layout (binding = 8, set = 0) uniform Frame {
 } frame;
 
 layout (binding = 9, set = 0, rgba8ui) uniform readonly uimage2D blueNoise;
-layout (binding = 10, set = 0) uniform LastCameraProperties
-{
-    mat4 view;
-    mat4 projection;
-} last_cam;
-layout (binding = 11, set = 1, std430) readonly buffer MaterialDataBuffer
+layout (binding = 10, set = 1, std430) readonly buffer MaterialDataBuffer
 {
     MaterialData materials[];
 } materials;
-layout (binding = 12, set = 2, std430) readonly buffer InstanceInfos
+layout (binding = 11, set = 2, std430) readonly buffer InstanceInfos
 {
     InstanceInfo infos[];
 } instances;
-layout (binding = 13, set = 3) uniform sampler2D textures[];
+layout (binding = 12, set = 3) uniform sampler2D textures[];
 
-layout (binding = 14, set = 4, std430) readonly buffer MeshIndicesBuffers
+layout (binding = 13, set = 4, std430) readonly buffer MeshIndicesBuffers
 {
     uint indices[];
 } mesh_indices_buffers[];
-layout (binding = 15, set = 5, std430) readonly buffer MeshTexCoordsBuffers
+layout (binding = 14, set = 5, std430) readonly buffer MeshTexCoordsBuffers
 {
     vec2 coords[];
 } mesh_tex_coords_buffers[];
 
-layout (binding = 16, set = 6, std430) readonly buffer MeshNormalsBuffers
+layout (binding = 15, set = 6, std430) readonly buffer MeshNormalsBuffers
 {
     float normals[];
 } mesh_normals_buffers[];

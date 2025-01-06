@@ -87,6 +87,8 @@ void main()
     //{
     //    PRINT("Normal: (%f, %f, %f)\n", baryCoords.x, baryCoords.y, ((1.0 - (baryCoords.x +baryCoords.y))));
     //}
+
+
     traceRays(interpolatedNormal, interpolatedUVs);
 }
 

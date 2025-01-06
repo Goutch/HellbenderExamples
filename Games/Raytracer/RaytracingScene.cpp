@@ -47,6 +47,7 @@ void RaytracingScene::createRaytracingPipeline() {
 }
 
 RaytracingScene::RaytracingScene() {
+
 	blue_noise = Texture::load("/textures/BlueNoiseRGB.png", IMAGE_FORMAT_RGBA8_UINT, IMAGE_FLAG_NO_SAMPLER);
 	createFrameBuffers(Graphics::getDefaultRenderTarget()->getResolution().x, Graphics::getDefaultRenderTarget()->getResolution().y);
 	createRaytracingPipeline();
@@ -120,7 +121,9 @@ RaytracingScene::RaytracingScene() {
 	RaytracingPipelineInstanceInfo pathtracing_pipeline_instance_info{};
 	pathtracing_pipeline_instance_info.raytracing_pipeline = raytracing_resources.pipeline;
 	raytracing_resources.pipeline_instance = Resources::createRaytracingPipelineInstance(pathtracing_pipeline_instance_info);
-
+	raytracing_resources.pipeline_instance->setTextureArray("historyAlbedo", history_albedo.data(), HYSTORY_COUNT, -1, 0);
+	raytracing_resources.pipeline_instance->setTextureArray("historyNormalDepth", history_normal_depth.data(), HYSTORY_COUNT, -1, 0);
+	raytracing_resources.pipeline_instance->setTextureArray("historyMotion", history_motion.data(), HYSTORY_COUNT, -1, 0);
 	if (textures.size() > 0)
 		raytracing_resources.pipeline_instance->setTextureArray("textures", textures.data(), textures.size());
 	raytracing_resources.pipeline_instance->setStorageBuffer("materials", material_buffer, material_buffer->getCount(), 0);
@@ -130,13 +133,16 @@ RaytracingScene::RaytracingScene() {
 	raytracing_resources.pipeline_instance->setStorageBufferArray("mesh_normals_buffers", normals.data(), normals.size(), -1);
 	raytracing_resources.pipeline_instance->setStorageBufferArray("mesh_tex_coords_buffers", uvs.data(), uvs.size(), -1);
 
+
 	Entity camera_entity = createEntity3D();
 	camera_entity.attach<Camera>();
 	camera_entity.get<Camera>()->setRenderTarget(Graphics::getDefaultRenderTarget());
 	camera_entity.get<Camera>()->active = false;
 	camera_entity.attach<CameraController>()->invert_y = true;
 	camera_entity.get<Transform>()->translate(vec3(0, 1, 0));
+	Camera *camera = camera_entity.get<Camera>();
 	setCameraEntity(camera_entity);
+	history_camera.resize(HYSTORY_COUNT, {camera_entity.get<Transform>()->world(), camera->projection});
 
 	Graphics::getDefaultRenderTarget()->onResolutionChange.subscribe(this, &RaytracingScene::onResolutionChange);
 }
@@ -179,6 +185,9 @@ void RaytracingScene::createFrameBuffers(uint32_t width, uint32_t height) {
 void RaytracingScene::onResolutionChange(RenderTarget *rt) {
 	createFrameBuffers(rt->getResolution().x, rt->getResolution().y);
 
+	raytracing_resources.pipeline_instance->setTextureArray("historyAlbedo", history_albedo.data(), HYSTORY_COUNT, -1, 0);
+	raytracing_resources.pipeline_instance->setTextureArray("historyNormalDepth", history_normal_depth.data(), HYSTORY_COUNT, -1, 0);
+	raytracing_resources.pipeline_instance->setTextureArray("historyMotion", history_motion.data(), HYSTORY_COUNT, -1, 0);
 	Camera *camera = getCameraEntity().get<Camera>();
 	camera->setRenderTarget(rt);
 }
@@ -192,29 +201,14 @@ void RaytracingScene::render() {
 	RaytracingPipelineResources resources = raytracing_resources;
 
 
-	Texture *albedo_history_buffer[HYSTORY_COUNT];
-	Texture *normal_depth_history_buffer[HYSTORY_COUNT];
-	Texture *motion_history_buffer[HYSTORY_COUNT];
-
-	for (uint32_t i = 0; i < HYSTORY_COUNT; i++) {
-		uint32_t f = (frame.index - i) % HYSTORY_COUNT;
-		albedo_history_buffer[i] = history_albedo[f];
-		normal_depth_history_buffer[i] = history_normal_depth[f];
-		motion_history_buffer[i] = history_motion[f];
-	}
-
 	mat4 camera_projection = camera_entity.get<Camera>()->projection;
 	mat4 camera_view = camera_entity.get<Transform>()->world();
+	history_camera[frame.index % HYSTORY_COUNT] = {camera_view, camera_projection};
 
 	resources.pipeline_instance->setUniform("frame", &frame, Graphics::getCurrentFrame());
 	resources.pipeline_instance->setTexture("outputAlbedo", output_texture, Graphics::getCurrentFrame(), 0);
-	resources.pipeline_instance->setTextureArray("historyAlbedo", albedo_history_buffer, HYSTORY_COUNT, Graphics::getCurrentFrame(), 0);
-	resources.pipeline_instance->setTextureArray("historyNormalDepth", normal_depth_history_buffer, HYSTORY_COUNT, Graphics::getCurrentFrame(), 0);
-	resources.pipeline_instance->setTextureArray("historyMotion", motion_history_buffer, HYSTORY_COUNT, Graphics::getCurrentFrame(), 0);
 	resources.pipeline_instance->setTexture("blueNoise", blue_noise, Graphics::getCurrentFrame(), 0);
-	resources.pipeline_instance->setUniform("last_cam", &last_camera_matrices, Graphics::getCurrentFrame());
-	mat4 camera_ubo[2] = {camera_view, glm::inverse(camera_projection)};
-	resources.pipeline_instance->setUniform("cam", &camera_ubo, Graphics::getCurrentFrame());
+	resources.pipeline_instance->setUniform("camera_history", history_camera.data(), Graphics::getCurrentFrame());
 
 
 	TraceRaysCmdInfo trace_rays_cmd_info{};
@@ -222,14 +216,6 @@ void RaytracingScene::render() {
 	trace_rays_cmd_info.root_acceleration_structure = root_acceleration_structure;
 	trace_rays_cmd_info.resolution = output_texture->getSize();
 	Graphics::traceRays(trace_rays_cmd_info);
-
-	last_camera_matrices[0] = glm::inverse(camera_view);
-	last_camera_matrices[1] = camera_projection;
-
-
-	last_albedo = albedo_history_buffer[0];
-	last_normal_depth = normal_depth_history_buffer[0];
-	last_motion = motion_history_buffer[0];
 
 	frame.index++;
 }
@@ -240,13 +226,13 @@ Texture *RaytracingScene::getMainCameraTexture() {
 			return output_texture;
 			break;
 		case ALBEDO:
-			return last_albedo;
+			return history_albedo[(frame.index - 1) % HYSTORY_COUNT];
 			break;
 		case NORMAL:
-			return last_normal_depth;
+			return history_normal_depth[(frame.index - 1) % HYSTORY_COUNT];
 			break;
 		case MOTION:
-			return last_motion;
+			return history_motion[(frame.index - 1) % HYSTORY_COUNT];
 			break;
 	}
 }

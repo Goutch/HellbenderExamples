@@ -19,6 +19,33 @@ float RandomFloat01(inout uint state)
 {
     return float(wang_hash(state)) / 4294967296.0;
 }
+// Utility function to find a vector perpendicular to a given normal
+vec3 Perpendicular(vec3 normal) {
+    // Choose an arbitrary perpendicular vector
+    return abs(normal.x) > abs(normal.z) ? vec3(-normal.y, normal.x, 0.0) : vec3(0.0, -normal.z, normal.y);
+}
+vec3 SampleCosineWeightedHemisphere(vec3 normal, inout uint state) {
+    float random1 = RandomFloat01(state);
+    float random2 = RandomFloat01(state);
+    // Step 1: Convert random inputs to spherical coordinates
+    float elevationAngle = acos(sqrt(1.0 - random1));// Elevation (theta), cosine-weighted
+    float azimuthAngle = 2.0 * PI * random2;// Azimuth (phi), uniformly distributed
+
+    // Step 2: Convert spherical coordinates to Cartesian (local tangent space)
+    float x = cos(azimuthAngle) * sin(elevationAngle);
+    float y = sin(azimuthAngle) * sin(elevationAngle);
+    float z = cos(elevationAngle);
+
+    // Step 3: Build an orthonormal basis (Tangent-Bitangent-Normal)
+    vec3 tangent = normalize(Perpendicular(normal));// A vector perpendicular to the normal
+    vec3 bitangent = cross(normal, tangent);// Bitangent completes the basis
+
+    // Step 4: Transform local sample direction to world space
+    vec3 worldDirection = x * tangent + y * bitangent + z * normal;
+
+    return worldDirection;
+}
+
 
 vec3 RandomUnitVectorRNG(inout uint state)
 {
@@ -28,6 +55,10 @@ vec3 RandomUnitVectorRNG(inout uint state)
     float x = r * cos(a);
     float y = r * sin(a);
     return vec3(x, y, z);
+}
+vec3 RandomDiffuseVectorFromRNG(vec3 normal)
+{
+    return normalize(RandomUnitVectorRNG(primaryRayPayload.payload.rng_state)+normal);
 }
 vec3 RandomUnitVectorNoise()
 {
@@ -47,9 +78,10 @@ vec3 RandomDiffuseVectorFromNoise(vec3 normal)
 {
     return normalize(RandomUnitVectorNoise() + normal);
 }
-vec3 RandomDiffuseVectorFromRNG(vec3 normal)
+
+vec3 RandomDiffuseVectorFromRNGWeighted(vec3 normal)
 {
-    return normalize(RandomUnitVectorRNG(primaryRayPayload.payload.rng_state)+normal);
+    return normalize(SampleCosineWeightedHemisphere(normal, primaryRayPayload.payload.rng_state));
 }
 vec3 RandomSpecularVector(vec3 direction, vec3 diffuse, float roughness)
 {
@@ -105,39 +137,45 @@ void traceRays(vec3 normal, vec2 uvs)
     }
     MaterialData material  = materials.materials[instance_info.material_index];
 
+    if (material.normal_index>=0)
+    {
+        vec3 normalMap = texture(textures[nonuniformEXT(material.normal_index)], uvs).rgb;
+        normal = normalize(normal + normalMap);
+    }
+
+
     vec3 to_light_dir= normalize(vec3(sin(frame.time), sin(frame.time), cos(frame.time)));
     float light_dot_product=dot(normal, to_light_dir);
     vec3 color =vec3(0.0);
     int num_sun_samples = 0;
     if (primaryRayPayload.payload.bounce_count<frame.max_bounces)
     {
+       vec3 newDir;
+        if (material.roughness>0.999 && smoothstep(0, 1, light_dot_product)>RandomFloat01(primaryRayPayload.payload.rng_state))
+        {
+
+            primaryRayPayload.payload.hit_sky=false;
+            primaryRayPayload.payload.color = vec3(0.0);
+            vec3 diffuseVector;
+            if (bool(frame.use_blue_noise))
+            {
+                diffuseVector = RandomDiffuseVectorFromNoise(to_light_dir);
+            }
+            else
+            {
+                diffuseVector = RandomDiffuseVectorFromRNGWeighted(to_light_dir);
+            }
+            newDir = RandomSpecularVector(to_light_dir, diffuseVector, LIGHT_BIAS);
+            traceLight(origin, newDir, 1000.0);;
+
+            if (primaryRayPayload.payload.hit_sky)
+            {
+                color += primaryRayPayload.payload.color;//*dot(hitResult.normal, newDir);
+                num_sun_samples++;
+            }
+        }
         for (uint i = 0; i < numSamples; i++)
         {
-            vec3 newDir;
-            if (material.roughness>0.999 && smoothstep(0, 1, light_dot_product)>RandomFloat01(primaryRayPayload.payload.rng_state))
-            {
-
-                primaryRayPayload.payload.hit_sky=false;
-                primaryRayPayload.payload.color = vec3(0.0);
-                vec3 diffuseVector;
-                if (bool(frame.use_blue_noise))
-                {
-                    diffuseVector = RandomDiffuseVectorFromNoise(to_light_dir);
-                }
-                else
-                {
-                    diffuseVector = RandomDiffuseVectorFromRNG(to_light_dir);
-                }
-                newDir = RandomSpecularVector(to_light_dir, diffuseVector, LIGHT_BIAS);
-                traceLight(origin, newDir, 1000.0);;
-
-                if (primaryRayPayload.payload.hit_sky)
-                {
-                    color += primaryRayPayload.payload.color;//*dot(hitResult.normal, newDir);
-                    num_sun_samples++;
-                }
-            }
-
             primaryRayPayload.payload.hit_sky=false;
 
             if (bool(frame.use_blue_noise))
@@ -146,7 +184,7 @@ void traceRays(vec3 normal, vec2 uvs)
             }
             else
             {
-                newDir = RandomDiffuseVectorFromRNG(normal);
+                newDir = RandomDiffuseVectorFromRNGWeighted(normal);
             }
 
             if (material.roughness<0.999)
@@ -161,7 +199,7 @@ void traceRays(vec3 normal, vec2 uvs)
     }
 
     vec4 materialColor = material.albedo;
-    if (material.has_albedo==1)
+    if (material.albedo_index>=0)
     {
         color *= texture(textures[nonuniformEXT(material.albedo_index)], uvs).rgb;
     }

@@ -16,8 +16,10 @@ HBE::GraphicPipelineInstance *RaytracingModelParser::createMaterial(const HBE::M
 	material.albedo = materialData.properties.base_color;
 	material.emission = materialData.properties.emmisive_factor;
 	material.roughness = materialData.properties.roughness;
-	material.has_albedo = materialData.properties.has_albedo;
-	material.albedo_texture_index = texture_index_offset + materialData.albedo_texture;
+	if (materialData.properties.has_albedo)
+		material.albedo_texture_index = texture_index_offset + materialData.albedo_texture;
+	if (materialData.properties.has_normal)
+		material.normal_texture_index = texture_index_offset + materialData.normal_texture;
 
 	info.materials->push_back(material);
 	return nullptr; //graphic pipeline is unused
