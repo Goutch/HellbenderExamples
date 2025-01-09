@@ -1,1 +1,1 @@
-# Collection of Samples for my HellbenderEngine Graphics Library
+# Collection of Samples for the HellbenderEngine Graphics Library
