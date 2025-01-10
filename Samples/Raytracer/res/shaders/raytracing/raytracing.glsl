@@ -155,15 +155,7 @@ void traceRays(vec3 normal, vec2 uvs)
 
             primaryRayPayload.payload.hit_sky=false;
             primaryRayPayload.payload.color = vec3(0.0);
-            vec3 diffuseVector;
-            if (bool(frame.use_blue_noise))
-            {
-                diffuseVector = RandomDiffuseVectorFromNoise(to_light_dir);
-            }
-            else
-            {
-                diffuseVector = RandomDiffuseVectorFromRNGWeighted(to_light_dir);
-            }
+            vec3 diffuseVector = RandomDiffuseVectorFromRNGWeighted(to_light_dir);
             newDir = RandomSpecularVector(to_light_dir, diffuseVector, LIGHT_BIAS);
             traceLight(origin, newDir, 1000.0);;
 
@@ -177,14 +169,7 @@ void traceRays(vec3 normal, vec2 uvs)
         {
             primaryRayPayload.payload.hit_sky=false;
 
-            if (bool(frame.use_blue_noise))
-            {
-                newDir = RandomDiffuseVectorFromNoise(normal);
-            }
-            else
-            {
-                newDir = RandomDiffuseVectorFromRNGWeighted(normal);
-            }
+            newDir = RandomDiffuseVectorFromRNGWeighted(normal);
 
             if (material.roughness<0.999)
             {

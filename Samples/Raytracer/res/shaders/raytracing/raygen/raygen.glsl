@@ -161,8 +161,8 @@ void main()
     }
 
     color /= float(historySampleCount);
-    const float gamma = 2.0;
-    float exposure = 1.0;
+    const float gamma = frame.gamma;
+    float exposure = frame.exposure;
     //tone mapping
     vec3 mapped = vec3(1.0) - exp(- color * exposure);
     //exposure

@@ -58,7 +58,8 @@ layout (binding = 8, set = 0) uniform Frame {
     uint max_bounces;
     float scattering_multiplier;
     float density_falloff;
-    int use_blue_noise;
+    float exposure;
+    float gamma;
 } frame;
 
 layout (binding = 9, set = 0, rgba8ui) uniform readonly uimage2D blueNoise;

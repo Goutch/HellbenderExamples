@@ -18,15 +18,7 @@ struct RaytracingPipelineResources {
 	std::vector<RaytracingShaderGroup> shader_groups;
 };
 
-struct Frame {
-	float time = 0;
-	uint32_t index = 0;
-	uint32_t sample_count = 1;
-	uint32_t max_bounces = 3;
-	float scattering_multiplier = 12.0f;
-	float density_falloff = 10.0f;
-	int use_blue_noise = 0;
-};
+
 #define HYSTORY_COUNT 4
 
 
@@ -40,6 +32,8 @@ private:
 		NORMAL = 2,
 		MOTION = 3,
 	};
+
+
 	RaytracingPipelineResources raytracing_resources;
 	std::vector<HBE::Texture *> textures;
 	RootAccelerationStructure *root_acceleration_structure;
@@ -87,6 +81,7 @@ private:
 	Texture *output_texture = nullptr;
 	Frame frame{};
 	bool paused = false;
+	float time = 0;
 	RENDER_MODE render_mode = DENOISED;
 
 

@@ -20,3 +20,14 @@ struct CameraProperties {
 	mat4 transform;
 	mat4 projection;
 };
+
+struct Frame {
+	float time = 0;
+	uint32_t index = 0;
+	uint32_t sample_count = 1;
+	uint32_t max_bounces = 3;
+	float scattering_multiplier = 12.0f;
+	float density_falloff = 10.0f;
+	float exposure = 1.0f;
+	float gamma = 2.2f;
+};
