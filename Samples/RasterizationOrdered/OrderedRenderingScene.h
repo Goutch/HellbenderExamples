@@ -34,7 +34,7 @@ public:
 	}
 
 
-	Texture *getMainCameraTexture() override {
+	Image *getMainCameraTexture() override {
 		return render_target->getFramebufferTexture(Graphics::getCurrentFrame());
 	}
 

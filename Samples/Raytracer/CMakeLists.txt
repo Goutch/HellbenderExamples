@@ -7,7 +7,11 @@ add_executable(${PROJECT_NAME}
         main.cpp
         RaytracingScene.cpp
        RaytracingModelParser.cpp
-        DataStructures.h)
+        DataStructures.h
+        Raytracer.cpp
+        Raytracer.h
+        Denoiser.cpp
+        Denoiser.h)
 target_link_libraries(${PROJECT_NAME} PUBLIC HBE)
 target_include_directories(${PROJECT_NAME}
         PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

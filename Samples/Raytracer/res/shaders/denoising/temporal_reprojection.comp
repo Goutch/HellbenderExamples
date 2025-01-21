@@ -1,3 +1,4 @@
+#include "../raytracing/data_structures.glsl"
 layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
 #ifndef HISTORY_COUNT
@@ -13,8 +14,8 @@ layout (binding = 3, set = 0) uniform CameraHistory
     CameraProperties properties[HISTORY_COUNT];
 } camera_history;
 
-layout(binding = 1) writeonly uniform image2D outputImage;
-
+layout (binding = 4, set = 0) uniform CameraProperties camera;
+layout(binding = 4, set = 0) writeonly uniform image2D outputImage;
 #endif
 void main()
 {
@@ -25,17 +26,17 @@ void main()
 
     vec2 uv = ((vec2(gl_LaunchIDEXT.xy) +vec2(0.5)) / vec2(gl_LaunchSizeEXT.xy));
     uint historySampleCount = 1;
-    vec3 fragment_world_space_position = origin.xyz + (primaryRayPayload.payload.hit_t * direction.xyz);
-    int current_history_index = int(mod(frame.index, HISTORY_COUNT));
+    vec3 fragment_world_space_position = origin.xyz + (payload.hit_t * direction.xyz);
+    int current_history_index = int(mod(frame.data.index, HISTORY_COUNT));
     for (int i = 1; i < HISTORY_COUNT-1; i++)
     {
-        if (frame.index - i < 0)
+        if (frame.data.index - i < 0)
         break;
 
         texture_space_coord = ivec2(floor(uv * vec2(gl_LaunchSizeEXT.xy)));
         uv -= imageLoad(historyMotion[current_history_index], texture_space_coord).xy;
         texture_space_coord = ivec2(floor(uv* vec2(gl_LaunchSizeEXT.xy)));
-        current_history_index = int(mod(frame.index - i, HISTORY_COUNT));
+        current_history_index = int(mod(frame.data.index - i, HISTORY_COUNT));
 
         //this fragment was not in the history frame
         if (max(uv.x, uv.y) > 1.0 || min(uv.x, uv.y) < 0.0)
@@ -73,12 +74,12 @@ void main()
     }
 
     color /= float(historySampleCount);
-    const float gamma = frame.gamma;
-    float exposure = frame.exposure;
-    //tone mapping
-    vec3 mapped = vec3(1.0) - exp(- color * exposure);
-    //exposure
-    mapped = pow(mapped, vec3(1.0 / gamma));
+    //const float gamma = frame.data.gamma;
+    //float exposure = frame.data.exposure;
+    ////tone mapping
+    //vec3 mapped = vec3(1.0) - exp(- color * exposure);
+    ////exposure
+    //mapped = pow(mapped, vec3(1.0 / gamma));
 
-    imageStore(outputAlbedo, ivec2(gl_LaunchIDEXT.xy), vec4(mapped, 1.0));
+    imageStore(outputImage, ivec2(gl_LaunchIDEXT.xy), vec4(mapped, 1.0));
 }

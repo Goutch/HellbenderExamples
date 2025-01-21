@@ -1,59 +1,72 @@
 
 #include "RaytracingScene.h"
 
-void RaytracingScene::createRaytracingPipeline() {
+void RaytracingScene::createDenoisingResources() {
+
 	ShaderInfo shader_info{};
 
-	shader_info.stage = SHADER_STAGE_RAY_GEN;
-	shader_info.path = "shaders/raytracing/raygen/raygen.glsl";
-	raytracing_resources.raygen_shader = Resources::createShader(shader_info);
+	shader_info.path = "shaders/denoising/vertical.comp";
 
-	shader_info.stage = SHADER_STAGE_RAY_MISS;
-	shader_info.path = "shaders/raytracing/miss/miss.glsl";
-	raytracing_resources.miss_shaders.push_back(Resources::createShader(shader_info));
+	shader_info.stage = SHADER_STAGE_COMPUTE;
+	shader_info.path = "shaders/denoising/horizontal.comp";
+	denoising_resources.horizontal_blur_shader = Resources::createShader(shader_info);
+	shader_info.path = "shaders/denoising/vertical.comp";
+	denoising_resources.vertical_blur_shader = Resources::createShader(shader_info);
 
-	shader_info.stage = SHADER_STAGE_CLOSEST_HIT;
-	shader_info.path = "shaders/raytracing/closestHit/closest_hit.glsl";
-	raytracing_resources.hit_shaders.push_back(Resources::createShader(shader_info));
-	shader_info.path = "shaders/raytracing/closestHit/closest_hit_mesh.glsl";
-	raytracing_resources.hit_shaders.push_back(Resources::createShader(shader_info));
+	ComputePipelineInfo compute_pipeline_info{};
+	compute_pipeline_info.compute_shader = denoising_resources.horizontal_blur_shader;
+	denoising_resources.horizontal_blur_pipeline = Resources::createComputePipeline(compute_pipeline_info);
+	compute_pipeline_info.compute_shader = denoising_resources.vertical_blur_shader;
+	denoising_resources.vertical_blur_pipeline = Resources::createComputePipeline(compute_pipeline_info);
 
-	shader_info.stage = SHADER_STAGE_INTERSECTION;
-	shader_info.path = "shaders/raytracing/intersect/intersect_box.glsl";
-	raytracing_resources.hit_shaders.push_back(Resources::createShader(shader_info));
-	shader_info.path = "shaders/raytracing/intersect/intersect_sphere.glsl";
-	raytracing_resources.hit_shaders.push_back(Resources::createShader(shader_info));
+	ComputeInstanceInfo compute_instance_info{};
+	compute_instance_info.compute_pipeline = denoising_resources.horizontal_blur_pipeline;
+	denoising_resources.horizontal_blur_instance = Resources::createComputeInstance(compute_instance_info);
 
-	raytracing_resources.shader_groups.push_back({0, -1, 2});//box
-	raytracing_resources.shader_groups.push_back({0, -1, 3});//sphere
-	raytracing_resources.shader_groups.push_back({1, -1, -1});//Mesh
+	compute_instance_info.compute_pipeline = denoising_resources.vertical_blur_pipeline;
+	denoising_resources.vertical_blur_instance = Resources::createComputeInstance(compute_instance_info);
 
-	RaytracingPipelineInfo raytraycing_pipeline_info{};
+	denoising_resources.vertical_blur_instance->setImageArray("historyAlbedo", gbuffer_resources.history_albedo.data(), HISTORY_COUNT);
+	denoising_resources.vertical_blur_instance->setImageArray("historyNormalDepth", gbuffer_resources.history_normal_depth.data(), HISTORY_COUNT);
+	denoising_resources.vertical_blur_instance->setImageArray("historyMotion", gbuffer_resources.history_motion.data(), HISTORY_COUNT);
+	//denoising_resources.vertical_blur_instance->setUniform("historyCamera", &gbuffer_resources.history_camera);
 
-	raytraycing_pipeline_info.raygen_shader = raytracing_resources.raygen_shader;
-	raytraycing_pipeline_info.miss_shaders = raytracing_resources.miss_shaders.data();
-	raytraycing_pipeline_info.miss_shader_count = raytracing_resources.miss_shaders.size();
-	raytraycing_pipeline_info.hit_shaders = raytracing_resources.hit_shaders.data();
-	raytraycing_pipeline_info.hit_shader_count = raytracing_resources.hit_shaders.size();
+	denoising_resources.vertical_blur_instance->setImage("inputImage", gbuffer_resources.denoiser_temporal_accumulation_texture);
+	denoising_resources.vertical_blur_instance->setImage("outputImage", gbuffer_resources.denoiser_blur_texture);
 
-	raytraycing_pipeline_info.shader_group_count = raytracing_resources.shader_groups.size();
-	raytraycing_pipeline_info.shader_groups = raytracing_resources.shader_groups.data();
-	raytraycing_pipeline_info.max_recursion_depth = 16;
+	denoising_resources.horizontal_blur_instance->setImageArray("historyAlbedo", gbuffer_resources.history_albedo.data(), HISTORY_COUNT);
+	denoising_resources.horizontal_blur_instance->setImageArray("historyNormalDepth", gbuffer_resources.history_normal_depth.data(), HISTORY_COUNT);
+	denoising_resources.horizontal_blur_instance->setImageArray("historyMotion", gbuffer_resources.history_motion.data(), HISTORY_COUNT);
+	//denoising_resources.horizontal_blur_instance->setUniform("historyCamera", &gbuffer_resources.history_camera);
 
-	raytracing_resources.pipeline = Resources::createRaytracingPipeline(raytraycing_pipeline_info);
+	denoising_resources.horizontal_blur_instance->setImage("inputImage", gbuffer_resources.denoiser_blur_texture);
+	denoising_resources.horizontal_blur_instance->setImage("outputImage", gbuffer_resources.denoiser_output_texture);
 }
 
-RaytracingScene::RaytracingScene() {
+void RaytracingScene::createRaytracingResources() {
 
-	blue_noise = Texture::load("/textures/BlueNoiseRGB.png", IMAGE_FORMAT_RGBA8_UINT, IMAGE_FLAG_NO_SAMPLER);
-	createFrameBuffers(Graphics::getDefaultRenderTarget()->getResolution().x, Graphics::getDefaultRenderTarget()->getResolution().y);
-	createRaytracingPipeline();
+
+}
+
+void RaytracingScene::loadAssets() {
+	scene_resources.materials = {{
+			                             {vec4(0.95, 0.95, 0.95, 0.0), vec4(0.0, 0.0, 0.0, 0.0), -1, -1, 1.0},//white
+			                             {vec4(0.95, 0, 0, 0.0), vec4(0.0, 0.0, 0.0, 0.0), -1, -1, 1.0},//red
+			                             {vec4(0, 0.95, 0, 0.0), vec4(0.0, 0.0, 0.0, 0.0), -1, -1, 1.0},//green
+			                             {vec4(0, 0, 0.95, 0.0), vec4(0.0, 0.0, 0.0, 0.0), -1, -1, 1.0},//blue
+			                             {vec4(0.9, 0.9, 0.1, 0.0), vec4(0.0, 0.0, 0.0, 0.0), -1, -1, 1.0},//yellow
+			                             {vec4(0.9, 0.1, 0.9, 0.0), vec4(0.0, 0.0, 0.0, 0.0), -1, -1, 1.0},//purple
+			                             {vec4(0.8, 0.8, 0.8, 0.0), vec4(0.0, 0.0, 0.0, 0.0), -1, -1, 0.4},//metalic
+			                             {vec4(0.8, 0.8, 0.8, 0.0), vec4(0.0, 0.0, 0.0, 0.0), -1, -1, 0.0},//mirror
+			                             {vec4(0.5, 0.5, 0.5, 0.0), vec4(10.0, 10.0, 10.0, 10.0), -1, -1, 1.0}}//light
+	};
+
 	RaytracingModelParserInfo model_parser_info{};
 	model_parser_info.mesh_shader_group_index = SHADER_GROUP_TYPE_MESH;
-	model_parser_info.acceleration_structures = &mesh_acceleration_structures;
-	model_parser_info.materials = &materials;
-	model_parser_info.textures = &textures;
-	model_parser_info.meshes = &meshes;
+	model_parser_info.acceleration_structures = &scene_resources.mesh_acceleration_structures;
+	model_parser_info.materials = &scene_resources.materials;
+	model_parser_info.textures = &scene_resources.textures;
+	model_parser_info.meshes = &scene_resources.meshes;
 
 	model_parser = new RaytracingModelParser(model_parser_info);
 
@@ -64,75 +77,19 @@ RaytracingScene::RaytracingScene() {
 
 	sponza_model = Resources::createModel(model_info);
 
-	AABBAccelerationStructureInfo aabb__acceleration_structure_info{};
-	aabb__acceleration_structure_info.max = vec3(0.5, 0.5, 0.5);
-	aabb__acceleration_structure_info.min = vec3(-0.5, -0.5, -0.5);
+}
 
-	aabb_acceleration_structure = Resources::createAABBAccelerationStructure(aabb__acceleration_structure_info);
-
-	std::vector<AABBAccelerationStructure *> aabb_acceleration_structures{aabb_acceleration_structure};
+void RaytracingScene::createScene() {
 
 	mat4 transform_aabb_floor(1.0f);
 	transform_aabb_floor = glm::translate(transform_aabb_floor, vec3(0, -0.5, 0));
 	transform_aabb_floor = glm::scale(transform_aabb_floor, vec3(1000, 1, 1000));
+
+	//todo: create a single bottom level acceleration structure from mesh inside the model
 	std::vector<AccelerationStructureInstance> sponza_acceleration_structure_instances = sponza_model->getAccelerationStructureInstances();
-	for (AccelerationStructureInstance &instance: sponza_acceleration_structure_instances) {
-		instance.transform = glm::translate(instance.transform, vec3(0, 10.0f, 0));
-	}
-	acceleration_structure_instances.insert(acceleration_structure_instances.end(), sponza_acceleration_structure_instances.begin(), sponza_acceleration_structure_instances.end());
-	acceleration_structure_instances.push_back(AccelerationStructureInstance{0, SHADER_GROUP_TYPE_BOX, transform_aabb_floor, ACCELERATION_STRUCTURE_TYPE_AABB, 0});
-	//createSphereField(200);
-	RootAccelerationStructureInfo root_acceleration_structure_info{};
-	root_acceleration_structure_info.aabb_acceleration_structures = aabb_acceleration_structures.data();
-	root_acceleration_structure_info.aabb_acceleration_structure_count = aabb_acceleration_structures.size();
-	root_acceleration_structure_info.mesh_acceleration_structures = mesh_acceleration_structures.data();
-	root_acceleration_structure_info.mesh_acceleration_structure_count = mesh_acceleration_structures.size();
-	root_acceleration_structure_info.instances = acceleration_structure_instances.data();
-	root_acceleration_structure_info.instance_count = acceleration_structure_instances.size();
-
-	root_acceleration_structure = Resources::createRootAccelerationStructure(root_acceleration_structure_info);
-
-	StorageBufferInfo material_storage_buffer_info{};
-	material_storage_buffer_info.stride = sizeof(MaterialData);
-	material_storage_buffer_info.count = materials.size();
-	material_storage_buffer_info.flags = STORAGE_BUFFER_FLAG_NONE;
-	material_buffer = Resources::createStorageBuffer(material_storage_buffer_info);
-	material_buffer->update(materials.data());
-
-	std::vector<InstanceInfo> instance_infos;
-	for (uint32_t i = 0; i < acceleration_structure_instances.size(); ++i) {
-		instance_infos.push_back({acceleration_structure_instances[i].custom_index, i, 16});
-	}
-	StorageBufferInfo instances_storage_buffer_info{};
-	instances_storage_buffer_info.stride = sizeof(InstanceInfo);
-	instances_storage_buffer_info.count = instance_infos.size();
-	instances_storage_buffer_info.flags = STORAGE_BUFFER_FLAG_NONE;
-	instance_buffer = Resources::createStorageBuffer(instances_storage_buffer_info);
-	instance_buffer->update(instance_infos.data());
-
-	std::vector<StorageBuffer *> normals;
-	std::vector<StorageBuffer *> indices;
-	std::vector<StorageBuffer *> uvs;
-	for (uint32_t i = 0; i < meshes.size(); i++) {
-		normals.push_back(meshes[i]->getAttributeStorageBuffer(2));
-		indices.push_back(meshes[i]->getIndicesStorageBuffer());
-		uvs.push_back(meshes[i]->getAttributeStorageBuffer(1));
-	}
-
-	RaytracingPipelineInstanceInfo pathtracing_pipeline_instance_info{};
-	pathtracing_pipeline_instance_info.raytracing_pipeline = raytracing_resources.pipeline;
-	raytracing_resources.pipeline_instance = Resources::createRaytracingPipelineInstance(pathtracing_pipeline_instance_info);
-	raytracing_resources.pipeline_instance->setTextureArray("historyAlbedo", history_albedo.data(), HYSTORY_COUNT, -1, 0);
-	raytracing_resources.pipeline_instance->setTextureArray("historyNormalDepth", history_normal_depth.data(), HYSTORY_COUNT, -1, 0);
-	raytracing_resources.pipeline_instance->setTextureArray("historyMotion", history_motion.data(), HYSTORY_COUNT, -1, 0);
-	if (textures.size() > 0)
-		raytracing_resources.pipeline_instance->setTextureArray("textures", textures.data(), textures.size());
-	raytracing_resources.pipeline_instance->setStorageBuffer("materials", material_buffer, material_buffer->getCount(), 0);
-	raytracing_resources.pipeline_instance->setStorageBuffer("instances", instance_buffer, instance_buffer->getCount(), 0);
-	raytracing_resources.pipeline_instance->setAccelerationStructure("topLevelAS", root_acceleration_structure);
-	raytracing_resources.pipeline_instance->setStorageBufferArray("mesh_indices_buffers", indices.data(), indices.size(), -1);
-	raytracing_resources.pipeline_instance->setStorageBufferArray("mesh_normals_buffers", normals.data(), normals.size(), -1);
-	raytracing_resources.pipeline_instance->setStorageBufferArray("mesh_tex_coords_buffers", uvs.data(), uvs.size(), -1);
+	scene_resources.acceleration_structure_instances.insert(scene_resources.acceleration_structure_instances.end(), sponza_acceleration_structure_instances.begin(),
+	                                                        sponza_acceleration_structure_instances.end());
+	scene_resources.acceleration_structure_instances.push_back(AccelerationStructureInstance{0, SHADER_GROUP_TYPE_BOX, transform_aabb_floor, ACCELERATION_STRUCTURE_TYPE_AABB, 0});
 
 
 	Entity camera_entity = createEntity3D();
@@ -142,52 +99,118 @@ RaytracingScene::RaytracingScene() {
 	camera_entity.get<Transform>()->translate(vec3(0, 1, 0));
 	Camera *camera = camera_entity.get<Camera>();
 	setCameraEntity(camera_entity);
-	history_camera.resize(HYSTORY_COUNT, {camera_entity.get<Transform>()->world(), camera->projection});
+	gbuffer_resources.history_camera.resize(HISTORY_COUNT, {camera_entity.get<Transform>()->world(), camera->projection});
+}
+
+RaytracingScene::RaytracingScene() {
+	raytracer = new Raytracer();
+
+	createGBuffer(Graphics::getDefaultRenderTarget()->getResolution().x, Graphics::getDefaultRenderTarget()->getResolution().y);
+	createRaytracingResources();
+	createDenoisingResources();
+	loadAssets();
+	createScene();
+
+	AABBAccelerationStructureInfo aabb__acceleration_structure_info{};
+	aabb__acceleration_structure_info.max = vec3(0.5, 0.5, 0.5);
+	aabb__acceleration_structure_info.min = vec3(-0.5, -0.5, -0.5);
+	scene_resources.aabb_acceleration_structure = Resources::createAABBAccelerationStructure(aabb__acceleration_structure_info);
+
+	RootAccelerationStructureInfo root_acceleration_structure_info{};
+	root_acceleration_structure_info.aabb_acceleration_structures = &scene_resources.aabb_acceleration_structure;
+	root_acceleration_structure_info.aabb_acceleration_structure_count = 1;
+	root_acceleration_structure_info.mesh_acceleration_structures = scene_resources.mesh_acceleration_structures.data();
+	root_acceleration_structure_info.mesh_acceleration_structure_count = scene_resources.mesh_acceleration_structures.size();
+	root_acceleration_structure_info.instances = scene_resources.acceleration_structure_instances.data();
+	root_acceleration_structure_info.instance_count = scene_resources.acceleration_structure_instances.size();
+
+	scene_resources.root_acceleration_structure = Resources::createRootAccelerationStructure(root_acceleration_structure_info);
+
+	StorageBufferInfo material_storage_buffer_info{};
+	material_storage_buffer_info.stride = sizeof(MaterialData);
+	material_storage_buffer_info.count = scene_resources.materials.size();
+	material_storage_buffer_info.flags = STORAGE_BUFFER_FLAG_NONE;
+	scene_resources.material_buffer = Resources::createStorageBuffer(material_storage_buffer_info);
+	scene_resources.material_buffer->update(scene_resources.materials.data());
+
+	std::vector<InstanceInfo> instance_infos;
+	for (uint32_t i = 0; i < scene_resources.acceleration_structure_instances.size(); ++i) {
+		instance_infos.push_back({scene_resources.acceleration_structure_instances[i].custom_index, i, 16});
+	}
+	StorageBufferInfo instances_storage_buffer_info{};
+	instances_storage_buffer_info.stride = sizeof(InstanceInfo);
+	instances_storage_buffer_info.count = instance_infos.size();
+	instances_storage_buffer_info.flags = STORAGE_BUFFER_FLAG_NONE;
+	scene_resources.instance_buffer = Resources::createStorageBuffer(instances_storage_buffer_info);
+	scene_resources.instance_buffer->update(instance_infos.data());
+
+
+	for (uint32_t i = 0; i < scene_resources.meshes.size(); i++) {
+		scene_resources.normals.push_back(scene_resources.meshes[i]->getAttributeStorageBuffer(2));
+		scene_resources.indices.push_back(scene_resources.meshes[i]->getIndicesStorageBuffer());
+		scene_resources.uvs.push_back(scene_resources.meshes[i]->getAttributeStorageBuffer(1));
+	}
+
+	raytracer->setGBufferUniforms(gbuffer_resources);
+	raytracer->setSceneUniforms(scene_resources);
 
 	Graphics::getDefaultRenderTarget()->onResolutionChange.subscribe(this, &RaytracingScene::onResolutionChange);
 }
 
-void RaytracingScene::createFrameBuffers(uint32_t width, uint32_t height) {
-	for (Texture *albedo: history_albedo) {
+void RaytracingScene::createGBuffer(uint32_t width, uint32_t height) {
+	for (Image *albedo: gbuffer_resources.history_albedo) {
 		delete albedo;
 	}
-	for (Texture *normal_depth: history_normal_depth) {
+	for (Image *normal_depth: gbuffer_resources.history_normal_depth) {
 		delete normal_depth;
 	}
-	for (Texture *motion: history_motion) {
+	for (Image *motion: gbuffer_resources.history_motion) {
 		delete motion;
 	}
-	if (output_texture != nullptr) {
-		delete output_texture;
-	}
-	history_albedo.clear();
-	history_normal_depth.clear();
-	history_motion.clear();
 
-	TextureInfo info{};
+	for (Image *irradiance: gbuffer_resources.history_irradiance) {
+		delete irradiance;
+	}
+	if (gbuffer_resources.denoiser_blur_texture != nullptr) {
+		delete gbuffer_resources.denoiser_blur_texture;
+	}
+	if (gbuffer_resources.denoiser_temporal_accumulation_texture != nullptr) {
+		delete gbuffer_resources.denoiser_temporal_accumulation_texture;
+	}
+	if (gbuffer_resources.denoiser_output_texture != nullptr) {
+		delete gbuffer_resources.denoiser_output_texture;
+	}
+
+	gbuffer_resources.history_albedo.clear();
+	gbuffer_resources.history_normal_depth.clear();
+	gbuffer_resources.history_motion.clear();
+	gbuffer_resources.history_irradiance.clear();
+
+	ImageInfo info{};
 	info.width = width;
 	info.height = height;
-	info.data_format = IMAGE_FORMAT_RGBA32F;
+	info.format = IMAGE_FORMAT_RGBA32F;
 	info.flags = IMAGE_FLAG_SHADER_WRITE;
-	info.sampler_info.address_mode = TEXTURE_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	info.sampler_info.filter = TEXTURE_SAMPLER_FILTER_TYPE_NEAREST;
-	info.sampler_info.flags = TEXTURE_SAMPLER_FLAG_NONE;
+	info.sampler_info.address_mode = IMAGE_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	info.sampler_info.filter = IMAGE_SAMPLER_FILTER_TYPE_NEAREST;
+	info.sampler_info.flags = IMAGE_SAMPLER_FLAG_NONE;
 
-	for (uint32_t i = 0; i < HYSTORY_COUNT; i++) {
-		history_albedo.push_back(Resources::createTexture(info));
-		history_normal_depth.push_back(Resources::createTexture(info));
-		history_motion.push_back(Resources::createTexture(info));
+	for (uint32_t i = 0; i < HISTORY_COUNT; i++) {
+		gbuffer_resources.history_albedo.push_back(Resources::createTexture(info));
+		gbuffer_resources.history_normal_depth.push_back(Resources::createTexture(info));
+		gbuffer_resources.history_irradiance.push_back(Resources::createTexture(info));
+		gbuffer_resources.history_motion.push_back(Resources::createTexture(info));
 	}
 
-	output_texture = Resources::createTexture(info);
+	gbuffer_resources.denoiser_temporal_accumulation_texture = Resources::createTexture(info);
+	gbuffer_resources.denoiser_blur_texture = Resources::createTexture(info);
+	gbuffer_resources.denoiser_output_texture = Resources::createTexture(info);
 }
 
 void RaytracingScene::onResolutionChange(RenderTarget *rt) {
-	createFrameBuffers(rt->getResolution().x, rt->getResolution().y);
+	createGBuffer(rt->getResolution().x, rt->getResolution().y);
 
-	raytracing_resources.pipeline_instance->setTextureArray("historyAlbedo", history_albedo.data(), HYSTORY_COUNT, -1, 0);
-	raytracing_resources.pipeline_instance->setTextureArray("historyNormalDepth", history_normal_depth.data(), HYSTORY_COUNT, -1, 0);
-	raytracing_resources.pipeline_instance->setTextureArray("historyMotion", history_motion.data(), HYSTORY_COUNT, -1, 0);
+
 	Camera *camera = getCameraEntity().get<Camera>();
 	camera->setRenderTarget(rt);
 }
@@ -198,43 +221,59 @@ void RaytracingScene::render() {
 	if (!paused)
 		frame.time = time;
 
-	RaytracingPipelineResources resources = raytracing_resources;
-
-
 	mat4 camera_projection = camera_entity.get<Camera>()->projection;
 	mat4 camera_view = camera_entity.get<Transform>()->world();
-	history_camera[frame.index % HYSTORY_COUNT] = {camera_view, camera_projection};
+	gbuffer_resources.history_camera[frame.index % HISTORY_COUNT] = {camera_view, camera_projection};
 
-	resources.pipeline_instance->setUniform("frame", &frame, Graphics::getCurrentFrame());
-	resources.pipeline_instance->setTexture("outputAlbedo", output_texture, Graphics::getCurrentFrame(), 0);
-	resources.pipeline_instance->setTexture("blueNoise", blue_noise, Graphics::getCurrentFrame(), 0);
-	resources.pipeline_instance->setUniform("camera_history", history_camera.data(), Graphics::getCurrentFrame());
+	///--------------------------------RAYTRACING--------------------------------///
+	raytracer->tracePrimaryRays(frame, gbuffer_resources, scene_resources.root_acceleration_structure);
+
+	//--------------------------------DENOISING--------------------------------/
+	if (render_mode >= ACCUMULATED) {
+		//todo:TEMPORAL ACCUMULATION
+	}
+	if (render_mode >= DENOISED) {
+		denoising_resources.vertical_blur_instance->setUniform("frame", &frame, Graphics::getCurrentFrame());
+		denoising_resources.horizontal_blur_instance->setUniform("frame", &frame, Graphics::getCurrentFrame());
+
+		ComputeDispatchCmdInfo compute_dispatch_cmd_info{};
+		compute_dispatch_cmd_info.pipeline_instance = denoising_resources.vertical_blur_instance;
+		compute_dispatch_cmd_info.size_x = gbuffer_resources.denoiser_output_texture->getSize().x;
+		compute_dispatch_cmd_info.size_y = gbuffer_resources.denoiser_output_texture->getSize().y;
+		compute_dispatch_cmd_info.size_z = 1;
+		Graphics::computeDispatch(compute_dispatch_cmd_info);
+		compute_dispatch_cmd_info.pipeline_instance = denoising_resources.horizontal_blur_instance;
+		Graphics::computeDispatch(compute_dispatch_cmd_info);
+	}
 
 
-	TraceRaysCmdInfo trace_rays_cmd_info{};
-	trace_rays_cmd_info.pipeline_instance = resources.pipeline_instance;
-	trace_rays_cmd_info.root_acceleration_structure = root_acceleration_structure;
-	trace_rays_cmd_info.resolution = output_texture->getSize();
-	Graphics::traceRays(trace_rays_cmd_info);
+	//denoising_resources.vertical_blur_instance->setUniform("camera_history", gbuffer_resources.history_camera.data(), Graphics::getCurrentFrame());
+	//denoising_resources.horizontal_blur_instance->setUniform("camera_history", gbuffer_resources.history_camera.data(), Graphics::getCurrentFrame());
 
 	frame.index++;
 }
 
-Texture *RaytracingScene::getMainCameraTexture() {
+Image *RaytracingScene::getMainCameraTexture() {
 	switch (render_mode) {
 		case DENOISED:
-			return output_texture;
+			return gbuffer_resources.denoiser_output_texture;
+			break;
+		case ACCUMULATED:
+			return gbuffer_resources.denoiser_temporal_accumulation_texture;
+			break;
+		case IRRADIANCE:
+			return gbuffer_resources.history_irradiance[(frame.index - 1) % HISTORY_COUNT];
 			break;
 		case ALBEDO:
-			return history_albedo[(frame.index - 1) % HYSTORY_COUNT];
+			return gbuffer_resources.history_albedo[(frame.index - 1) % HISTORY_COUNT];
 			break;
 		case NORMAL:
-			return history_normal_depth[(frame.index - 1) % HYSTORY_COUNT];
+			return gbuffer_resources.history_normal_depth[(frame.index - 1) % HISTORY_COUNT];
 			break;
-		case MOTION:
-			return history_motion[(frame.index - 1) % HYSTORY_COUNT];
-			break;
+		default:
+			return gbuffer_resources.history_albedo[(frame.index - 1) % HISTORY_COUNT];
 	}
+
 }
 
 void RaytracingScene::update(float delta) {
@@ -244,13 +283,16 @@ void RaytracingScene::update(float delta) {
 		render_mode = DENOISED;
 	}
 	if (Input::getKeyDown(KEY_NUMBER_2)) {
-		render_mode = ALBEDO;
+		render_mode = ACCUMULATED;
 	}
 	if (Input::getKeyDown(KEY_NUMBER_3)) {
-		render_mode = NORMAL;
+		render_mode = IRRADIANCE;
 	}
 	if (Input::getKeyDown(KEY_NUMBER_4)) {
-		render_mode = MOTION;
+		render_mode = ALBEDO;
+	}
+	if (Input::getKeyDown(KEY_NUMBER_5)) {
+		render_mode = NORMAL;
 	}
 	if (Input::getKey(KEY_NUMBER_7)) {
 		frame.gamma -= delta;
@@ -315,38 +357,52 @@ void RaytracingScene::update(float delta) {
 }
 
 RaytracingScene::~RaytracingScene() {
+	delete raytracer;
 
-	for (Shader *shader: raytracing_resources.miss_shaders) {
-		delete shader;
-	}
-	for (Shader *shader: raytracing_resources.hit_shaders) {
-		delete shader;
-	}
-	for (Texture *albedo: history_albedo) {
+	//GBUFFER
+	for (Image *albedo: gbuffer_resources.history_albedo) {
 		delete albedo;
 	}
-	for (Texture *normal_depth: history_normal_depth) {
+	for (Image *normal_depth: gbuffer_resources.history_normal_depth) {
 		delete normal_depth;
 	}
-	for (Texture *motion: history_motion) {
+	for (Image *motion: gbuffer_resources.history_motion) {
 		delete motion;
 	}
-	if (output_texture != nullptr) {
-		delete output_texture;
+
+	for (Image *irradiance: gbuffer_resources.history_irradiance) {
+		delete irradiance;
 	}
-	history_albedo.clear();
-	history_normal_depth.clear();
-	history_motion.clear();
-	delete raytracing_resources.raygen_shader;
-	//delete blue_noise;
-	delete material_buffer;
-	delete instance_buffer;
-	delete aabb_acceleration_structure;
-	delete root_acceleration_structure;
-	delete raytracing_resources.pipeline_instance;
-	delete raytracing_resources.pipeline;
-	delete model_parser;
+	if (gbuffer_resources.denoiser_output_texture != nullptr) {
+		delete gbuffer_resources.denoiser_output_texture;
+	}
+	if (gbuffer_resources.denoiser_blur_texture != nullptr) {
+		delete gbuffer_resources.denoiser_blur_texture;
+	}
+	if (gbuffer_resources.denoiser_temporal_accumulation_texture != nullptr) {
+		delete gbuffer_resources.denoiser_temporal_accumulation_texture;
+	}
+
+	gbuffer_resources.history_albedo.clear();
+	gbuffer_resources.history_normal_depth.clear();
+	gbuffer_resources.history_motion.clear();
+	gbuffer_resources.history_irradiance.clear();
+
+	//SCENE
+	delete scene_resources.root_acceleration_structure;
+	delete scene_resources.material_buffer;
+	delete scene_resources.instance_buffer;
+	delete scene_resources.aabb_acceleration_structure;
+
 	delete sponza_model;
+	delete model_parser;
+
+	delete denoising_resources.horizontal_blur_instance;
+	delete denoising_resources.vertical_blur_instance;
+	delete denoising_resources.horizontal_blur_pipeline;
+	delete denoising_resources.vertical_blur_pipeline;
+	delete denoising_resources.horizontal_blur_shader;
+	delete denoising_resources.vertical_blur_shader;
 }
 
 void RaytracingScene::createSphereField(int n) {
@@ -355,7 +411,7 @@ void RaytracingScene::createSphereField(int n) {
 		Transform t{};
 		t.translate(vec3(Random::floatRange(-50, 50), radius, Random::floatRange(-50, 50)));
 		t.setLocalScale(vec3(radius * 2.0f));
-		acceleration_structure_instances.push_back(
+		scene_resources.acceleration_structure_instances.push_back(
 				AccelerationStructureInstance{0, SHADER_GROUP_TYPE_SPHERE, t.local(), ACCELERATION_STRUCTURE_TYPE_AABB, Random::uintRange(0, 8)});
 	}
 }
@@ -364,14 +420,18 @@ void RaytracingScene::createMaterialDisplay() {
 	for (uint32_t i = 0; i < 10; ++i) {
 		mat4 t(1.0f);
 		t = glm::translate(t, vec3(2 * (i + 1), 0, 0));
-		acceleration_structure_instances.push_back(
+		scene_resources.acceleration_structure_instances.push_back(
 				AccelerationStructureInstance{0, SHADER_GROUP_TYPE_BOX, t, ACCELERATION_STRUCTURE_TYPE_AABB, i});
 	}
 	for (uint32_t i = 0; i < 7; ++i) {
 		mat4 t(1.0f);
 		t = glm::translate(t, vec3((2 * i) + 1, 0, 0));
-		acceleration_structure_instances.push_back(
+		scene_resources.acceleration_structure_instances.push_back(
 				AccelerationStructureInstance{0, SHADER_GROUP_TYPE_SPHERE, t, ACCELERATION_STRUCTURE_TYPE_AABB, i % 7});
 	}
 }
+
+
+
+
 

@@ -1,10 +1,4 @@
-#version 460
-#extension GL_EXT_ray_tracing : enable
-#extension GL_GOOGLE_include_directive : require
 #define SCALE 1000.0
-#define PAYLOAD_IN
-#include "../common.glsl"
-
 const vec3 AMBIENT = vec3(0.1, 0.1, 0.1);
 const int SAMPLE_COUNT=8;
 const float START_ALTITUDE_RATIO = 0.125;
@@ -19,7 +13,7 @@ float atmosphereDensity(vec3 point, vec3 planet_position)
 {
     float altitude=length(point-planet_position) - PLANET_RADIUS;
     float altitude01= altitude/(ATMOSPHERE_RADIUS-PLANET_RADIUS);
-    float density=exp(-altitude01*frame.density_falloff)*(1-altitude01);
+    float density=exp(-altitude01*frame.data.density_falloff)*(1-altitude01);
     return density;
 }
 
@@ -60,13 +54,14 @@ vec2 raySphere(vec3 sphereCentre, float sphereRadius, vec3 rayOrigin, vec3 rayDi
     // Ray did not intersect sphere
     return vec2(sphereRadius*999, 0);
 }
-void main()
+
+vec3 calculateAtmosphericScatering()
 {
-    vec3 toLightDir = normalize(vec3(sin(frame.time), sin(frame.time), cos(frame.time)));
+    vec3 toLightDir = normalize(vec3(sin(frame.data.time), sin(frame.data.time), cos(frame.data.time)));
     float sun_emision = max(pow(dot(toLightDir, gl_WorldRayDirectionEXT), E*30), 0);
 
     float atmosphere_height = ATMOSPHERE_RADIUS-PLANET_RADIUS;
-    vec3 wavelength = WAVELENGTHS*frame.scattering_multiplier;
+    vec3 wavelength = WAVELENGTHS*frame.data.scattering_multiplier;
     vec3 origin =vec3(0, PLANET_RADIUS+(START_ALTITUDE_RATIO*(ATMOSPHERE_RADIUS-PLANET_RADIUS)), 0)+gl_WorldRayOriginEXT;
     vec3 planet_center =gl_WorldRayOriginEXT;
     planet_center.y=0;
@@ -108,13 +103,6 @@ void main()
 
         sunColor += (scattered_light);
     }
-    mix(vec3(1,1,1),sunColor,(dot(toLightDir,gl_WorldRayDirectionEXT)+1)/2.0);
-
-    primaryRayPayload.payload.bounce_count++;
-    primaryRayPayload.payload.color = sunColor;
-    primaryRayPayload.payload.bounce_count--;
-    primaryRayPayload.payload.hit_sky = true;
-    primaryRayPayload.payload.hit_t = gl_RayTmaxEXT;
-    primaryRayPayload.payload.hit_normal = -gl_WorldRayDirectionEXT;
-
+    mix(vec3(1, 1, 1), sunColor, (dot(toLightDir, gl_WorldRayDirectionEXT)+1)/2.0);
+    return sunColor;
 }

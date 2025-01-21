@@ -162,7 +162,7 @@ namespace Pong {
 			font = Resources::createFont(font_info);
 
 
-			text_pipeline_instance->setTexture("mtsdf", font->getTextureAtlas());
+			text_pipeline_instance->setImage("mtsdf", font->getTextureAtlas());
 			text = std::string("fps\n") + "ms";
 			text_mesh = Geometry::createText(text,
 											 *font,

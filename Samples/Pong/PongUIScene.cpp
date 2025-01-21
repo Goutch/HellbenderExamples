@@ -78,8 +78,8 @@ namespace Pong {
 
 		left_text_pipeline_instance->setUniform("material", &PongGame::LEFT_COLOR);
 		right_text_pipeline_instance->setUniform("material", &PongGame::RIGHT_COLOR);
-		left_text_pipeline_instance->setTexture("mtsdf", font->getTextureAtlas());
-		right_text_pipeline_instance->setTexture("mtsdf", font->getTextureAtlas());
+		left_text_pipeline_instance->setImage("mtsdf", font->getTextureAtlas());
+		right_text_pipeline_instance->setImage("mtsdf", font->getTextureAtlas());
 	}
 
 	void PongUIScene::setupScene() {

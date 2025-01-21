@@ -5,57 +5,15 @@
 #include "array"
 #include "DataStructures.h"
 #include "RaytracingModelParser.h"
+#include "Raytracer.h"
 //#include "NRD.h"
 
 using namespace HBE;
 
-struct RaytracingPipelineResources {
-	RaytracingPipelineInstance *pipeline_instance;
-	RaytracingPipeline *pipeline;
-	Shader *raygen_shader;
-	std::vector<Shader *> miss_shaders;
-	std::vector<Shader *> hit_shaders;
-	std::vector<RaytracingShaderGroup> shader_groups;
-};
 
-
-#define HYSTORY_COUNT 4
-
+#define HISTORY_COUNT 4
 
 class RaytracingScene : public Scene {
-
-private:
-
-	enum RENDER_MODE {
-		DENOISED = 0,
-		ALBEDO = 1,
-		NORMAL = 2,
-		MOTION = 3,
-	};
-
-
-	RaytracingPipelineResources raytracing_resources;
-	std::vector<HBE::Texture *> textures;
-	RootAccelerationStructure *root_acceleration_structure;
-	AABBAccelerationStructure *aabb_acceleration_structure;
-	std::vector<MeshAccelerationStructure *> mesh_acceleration_structures;
-	std::vector<Mesh *> meshes;
-	std::vector<AccelerationStructureInstance> acceleration_structure_instances;
-	StorageBuffer *material_buffer;
-	StorageBuffer *instance_buffer;
-	RaytracingModelParser *model_parser;
-	Model *sponza_model;
-	std::vector<MaterialData> materials = {{
-			                                       {vec4(0.95, 0.95, 0.95, 0.0), vec4(0.0, 0.0, 0.0, 0.0), -1, -1, 1.0},//white
-			                                       {vec4(0.95, 0, 0, 0.0), vec4(0.0, 0.0, 0.0, 0.0), -1, -1, 1.0},//red
-			                                       {vec4(0, 0.95, 0, 0.0), vec4(0.0, 0.0, 0.0, 0.0), -1, -1, 1.0},//green
-			                                       {vec4(0, 0, 0.95, 0.0), vec4(0.0, 0.0, 0.0, 0.0), -1, -1, 1.0},//blue
-			                                       {vec4(0.9, 0.9, 0.1, 0.0), vec4(0.0, 0.0, 0.0, 0.0), -1, -1, 1.0},//yellow
-			                                       {vec4(0.9, 0.1, 0.9, 0.0), vec4(0.0, 0.0, 0.0, 0.0), -1, -1, 1.0},//purple
-			                                       {vec4(0.8, 0.8, 0.8, 0.0), vec4(0.0, 0.0, 0.0, 0.0), -1, -1, 0.4},//metalic
-			                                       {vec4(0.8, 0.8, 0.8, 0.0), vec4(0.0, 0.0, 0.0, 0.0), -1, -1, 0.0},//mirror
-			                                       {vec4(0.5, 0.5, 0.5, 0.0), vec4(10.0, 10.0, 10.0, 10.0), -1, -1, 1.0}}//light
-	};
 	enum MATERIALS {
 		MATERIAL_WHITE = 0,
 		MATERIAL_RED = 1,
@@ -72,30 +30,47 @@ private:
 		SHADER_GROUP_TYPE_SPHERE = 1,
 		SHADER_GROUP_TYPE_MESH = 2,
 	};
-	std::vector<Texture *> history_albedo;
-	std::vector<Texture *> history_normal_depth;
-	std::vector<Texture *> history_motion;
-	std::vector<CameraProperties> history_camera;
-
-	Texture *blue_noise;
-	Texture *output_texture = nullptr;
+	enum RENDER_MODE {
+		NORMAL = 0,
+		DEPTH = 1,
+		ALBEDO = 2,
+		IRRADIANCE = 3,
+		RAW = 4,
+		ACCUMULATED = 5,
+		DENOISED = 6,
+	};
+private:
+	GBufferResources gbuffer_resources;
+	SceneResources scene_resources;
+	DenoisingResources denoising_resources;
+	Raytracer *raytracer;
 	Frame frame{};
+
+	//assets
+	RaytracingModelParser *model_parser;
+	Model *sponza_model;
+
+
 	bool paused = false;
 	float time = 0;
-	RENDER_MODE render_mode = DENOISED;
-
-
+	RENDER_MODE render_mode = ALBEDO;
 public:
 
-	void createFrameBuffers(uint32_t width, uint32_t height);
+	void createGBuffer(uint32_t width, uint32_t height);
+
+	void createDenoisingResources();
 
 	void onResolutionChange(RenderTarget *rt);
 
-	void createRaytracingPipeline();
+	void createRaytracingResources();
+
+	void loadAssets();
+
+	void createScene();
 
 	void render() override;
 
-	Texture *getMainCameraTexture() override;
+	Image *getMainCameraTexture() override;
 
 	void update(float delta) override;
 

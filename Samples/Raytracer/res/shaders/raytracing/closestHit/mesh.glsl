@@ -1,22 +1,14 @@
-#version 460
-#extension GL_EXT_ray_tracing: enable
-#extension GL_EXT_nonuniform_qualifier: enable
-#extension GL_GOOGLE_include_directive : require
-#include "../../print.glsl"
-#define PAYLOAD_IN
-#include "../common.glsl"
 hitAttributeEXT HitResult
 {
     vec2 barycentric_coords;
 } hitResult;
-#include "../raytracing.glsl"
 
-
-#define IS_CENTER_PIXEL_CONDITION gl_LaunchIDEXT.x == (gl_LaunchSizeEXT.x) / 2 && gl_LaunchIDEXT.y == (gl_LaunchSizeEXT.y / 2)
-#define PRINT debugPrintfEXT
-void main()
+struct VertexData{
+    vec3 normal;
+    vec2 tex_coords;
+};
+VertexData getInterpolatedVertexData(InstanceInfo instance_info)
 {
-    InstanceInfo instance_info = instances.infos[gl_InstanceCustomIndexEXT];
 
     //Get the barycentric coordinates of the hit point.
     vec3 baryCoords = vec3(hitResult.barycentric_coords.x, hitResult.barycentric_coords.y, 1.0 - (hitResult.barycentric_coords.x + hitResult.barycentric_coords.y));
@@ -84,6 +76,8 @@ void main()
     (baryCoords.y * uv2) +
     (baryCoords.z * uv0);
 
-    traceRays(interpolatedNormal, interpolatedUVs);
+    VertexData vertexData;
+    vertexData.normal = interpolatedNormal;
+    vertexData.tex_coords = interpolatedUVs;
+    return vertexData;
 }
-

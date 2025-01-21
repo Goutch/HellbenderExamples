@@ -6,7 +6,7 @@
 
 struct RaytracingModelParserInfo {
 	int mesh_shader_group_index;
-	std::vector<HBE::Texture *> *textures;
+	std::vector<HBE::Image *> *textures;
 	std::vector<MaterialData> *materials;
 	std::vector<Mesh *> *meshes;
 	std::vector<MeshAccelerationStructure *> *acceleration_structures;
@@ -22,9 +22,9 @@ public:
 
 	HBE::Mesh *createMesh(const HBE::ModelPrimitiveData &data, HBE::ModelInfo model_info) override;
 
-	HBE::RasterizationPipelineInstance *createMaterial(const HBE::ModelMaterialData &materialData, HBE::Texture **textures) override;
+	HBE::RasterizationPipelineInstance *createMaterial(const HBE::ModelMaterialData &materialData, HBE::Image **textures) override;
 
-	Texture *createTexture(const ModelTextureData &data) override;
+	Image *createTexture(const ModelTextureData &data) override;
 
 	void onStartParsingModel(HBE::Model *model) override;
 

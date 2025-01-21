@@ -6,7 +6,7 @@ Raytracing Pipeline Overview
 2 - low resolution edge detection
 3 - ray trace secondary rays
     3.1 - Adaptive sampling use variance map & edge detection to decide how many rays per pixels. (from 0.25 for flat surfaces to 4 rays per pixels for penumbra)
-    3.2 - create light map
+    3.2 - create irradiance map
     3.3 - update variance map for current history
 4 - denoising 
     4.1 - temporal re projection + use edge detection to apply taa

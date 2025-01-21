@@ -11,7 +11,7 @@ HBE::Mesh *RaytracingModelParser::createMesh(const HBE::ModelPrimitiveData &data
 	return mesh;
 }
 
-HBE::RasterizationPipelineInstance *RaytracingModelParser::createMaterial(const HBE::ModelMaterialData &materialData, HBE::Texture **textures) {
+HBE::RasterizationPipelineInstance *RaytracingModelParser::createMaterial(const HBE::ModelMaterialData &materialData, HBE::Image **textures) {
 	MaterialData material;
 	material.albedo = materialData.properties.base_color;
 	material.emission = materialData.properties.emmisive_factor;
@@ -25,8 +25,8 @@ HBE::RasterizationPipelineInstance *RaytracingModelParser::createMaterial(const 
 	return nullptr; //graphic pipeline is unused
 }
 
-HBE::Texture *RaytracingModelParser::createTexture(const HBE::ModelTextureData &data) {
-	Texture *texture = DefaultModelParser::createTexture(data);
+HBE::Image *RaytracingModelParser::createTexture(const HBE::ModelTextureData &data) {
+	Image *texture = DefaultModelParser::createTexture(data);
 	info.textures->push_back(texture);
 	return texture;
 

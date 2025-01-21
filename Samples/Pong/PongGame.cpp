@@ -24,7 +24,7 @@ namespace Pong {
 	}
 
 	void PongGame::onPresent() {
-		std::vector<Texture *> present_images;
+		std::vector<Image *> present_images;
 		if (game_scene->isActive() && game_scene->getMainCameraTexture() != nullptr) {
 			present_images.push_back(game_scene->getMainCameraTexture());
 		}

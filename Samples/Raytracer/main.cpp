@@ -39,7 +39,7 @@ void onAppUpdate(float delta) {
 }
 
 void onAppPresent() {
-	std::vector<Texture *> present_images;
+	std::vector<Image *> present_images;
 	if (ui_scene != nullptr && ui_scene->isActive() && ui_scene->getMainCameraTexture() != nullptr) {
 		present_images.push_back(ui_scene->getMainCameraTexture());
 	}

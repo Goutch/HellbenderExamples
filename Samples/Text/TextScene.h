@@ -105,7 +105,7 @@ private:
 
 		font = Resources::createFont(font_info);
 
-		text_pipeline_instance->setTexture("mtsdf", font->getTextureAtlas());
+		text_pipeline_instance->setImage("mtsdf", font->getTextureAtlas());
 		float total_width;
 		float total_height;
 		text_mesh = Geometry::createText(text_str,
