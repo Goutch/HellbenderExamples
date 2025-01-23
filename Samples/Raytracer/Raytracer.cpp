@@ -19,8 +19,7 @@ Raytracer::~Raytracer() {
 	}
 }
 
-//PRIMARY RAYS - Fill GBuffer(Albedo,Normal,Depth,Motion)
-void Raytracer::tracePrimaryRays(Frame &frame, GBufferResources &gbuffer_resources, RootAccelerationStructure *root_acceleration_structure) {
+void Raytracer::traceRays(Frame &frame, GBufferResources &gbuffer_resources, RootAccelerationStructure *root_acceleration_structure) {
 	primary_raytracing_resources.pipeline_instance->setUniform("frame", &frame, Graphics::getCurrentFrame());
 	primary_raytracing_resources.pipeline_instance->setUniform("camera_history", gbuffer_resources.history_camera.data(), Graphics::getCurrentFrame());
 
@@ -36,6 +35,7 @@ void Raytracer::setGBufferUniforms(GBufferResources &gbuffer_resources) {
 	primary_raytracing_resources.pipeline_instance->setImageArray("historyNormalDepth", gbuffer_resources.history_normal_depth.data(), gbuffer_resources.history_normal_depth.size(), -1, 0);
 	primary_raytracing_resources.pipeline_instance->setImageArray("historyMotion", gbuffer_resources.history_motion.data(), gbuffer_resources.history_motion.size(), -1, 0);
 	primary_raytracing_resources.pipeline_instance->setImageArray("historyIrradiance", gbuffer_resources.history_irradiance.data(), gbuffer_resources.history_irradiance.size(), -1, 0);
+	primary_raytracing_resources.pipeline_instance->setImageArray("historyPosition", gbuffer_resources.history_position.data(), gbuffer_resources.history_position.size(), -1, 0);
 }
 
 RaytracerResources &Raytracer::getRaytracingResources() {
@@ -51,7 +51,6 @@ void Raytracer::setSceneUniforms(SceneResources &scene_resources) {
 	primary_raytracing_resources.pipeline_instance->setStorageBufferArray("mesh_normals_buffers", scene_resources.normals.data(), scene_resources.normals.size(), -1);
 	primary_raytracing_resources.pipeline_instance->setStorageBufferArray("mesh_tex_coords_buffers", scene_resources.uvs.data(), scene_resources.uvs.size(), -1);
 	primary_raytracing_resources.pipeline_instance->setStorageBuffer("materials", scene_resources.material_buffer, scene_resources.material_buffer->getCount(), 0);
-
 }
 
 

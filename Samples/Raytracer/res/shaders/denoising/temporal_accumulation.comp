@@ -1,0 +1,83 @@
+#extension GL_GOOGLE_include_directive: require
+#include "../raytracing/data_structures.glsl"
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+#ifndef HISTORY_COUNT
+#define HISTORY_COUNT 4
+#endif
+
+#ifdef HISTORY_COUNT
+layout (binding =0, set = 0) uniform FrameUBO {
+    Frame data;
+} frame;
+
+layout (binding = 1, set = 0, rgba32f) uniform readonly image2D historyAlbedo[HISTORY_COUNT];
+layout (binding = 2, set = 0, rgba32f) uniform readonly image2D historyNormalDepth[HISTORY_COUNT];
+layout (binding = 3, set = 0, rgba32f) uniform readonly image2D historyMotion[HISTORY_COUNT];
+layout (binding = 4, set = 0, rgba32f) uniform readonly image2D historyIrradiance[HISTORY_COUNT];
+layout (binding = 5, set = 0, rgba32f) uniform readonly image2D historyPosition[HISTORY_COUNT];
+layout (binding = 6, set = 0) uniform CameraHistory
+{
+    CameraProperties properties[HISTORY_COUNT];
+} camera_history;
+
+layout(binding = 7, set = 0, rgba32f) writeonly uniform image2D outputImage;
+#endif
+void main()
+{
+    ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
+
+    int current_history_index = int(mod(frame.data.index, HISTORY_COUNT));
+    ivec2 resolution = imageSize(historyAlbedo[current_history_index]);
+    ivec2 texture_space_coord = ivec2(gl_GlobalInvocationID.xy);
+    vec2 uv = ((vec2(gl_GlobalInvocationID.xy) +vec2(0.5)) / vec2(resolution.xy));
+
+    uint historySampleCount = 1;
+
+    vec4 albedo = imageLoad(historyAlbedo[current_history_index], texture_space_coord);
+    vec4 irradiance = imageLoad(historyIrradiance[current_history_index], texture_space_coord);
+    vec4 world_position = imageLoad(historyPosition[current_history_index], texture_space_coord);
+    for (int i = 1; i < HISTORY_COUNT-1; i++)
+    {
+        if (frame.data.index - i < 0)
+        break;
+
+
+        texture_space_coord = ivec2(floor(uv * vec2(resolution.xy)));
+        uv -= imageLoad(historyMotion[current_history_index], texture_space_coord).xy;
+        texture_space_coord = ivec2(floor(uv* vec2(resolution.xy)));
+        current_history_index = int(mod(frame.data.index - i, HISTORY_COUNT));
+
+        //this fragment was not in the history frame
+        if (max(uv.x, uv.y) > 1.0 || min(uv.x, uv.y) < 0.0)
+        {
+            continue;
+        }
+
+        vec4 history_world_position = imageLoad(historyPosition[current_history_index], texture_space_coord);
+        // this fragment was occluded in the history frame
+        if (distance(world_position.xyz, history_world_position.xyz) > 0.05f)
+        {
+            //color += vec3(0, 0, 1);
+            //historySampleCount ++;
+            continue;
+        }
+
+        //sample history color
+
+        albedo += imageLoad(historyAlbedo[current_history_index], texture_space_coord);
+        irradiance += imageLoad(historyIrradiance[current_history_index], texture_space_coord);
+
+        historySampleCount++;
+    }
+
+    albedo /= float(historySampleCount);
+    irradiance /= float(historySampleCount);
+
+    vec4 hdr_color = albedo * irradiance;
+
+    vec3 tone_mapped = vec3(1.0) - exp(-hdr_color.rgb * frame.data.exposure);
+    tone_mapped = pow(tone_mapped, vec3(1.0 / frame.data.gamma));
+
+    imageStore(outputImage, ivec2(gl_GlobalInvocationID.xy), vec4(tone_mapped.rgb, 1.0));
+}

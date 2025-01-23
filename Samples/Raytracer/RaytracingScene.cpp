@@ -1,51 +1,27 @@
 
 #include "RaytracingScene.h"
 
-void RaytracingScene::createDenoisingResources() {
+void RaytracingScene::render() {
+	Scene::render();
+	Entity camera_entity = getCameraEntity();
+	if (!paused)
+		frame.time = time;
 
-	ShaderInfo shader_info{};
+	mat4 camera_projection = camera_entity.get<Camera>()->projection;
+	mat4 camera_view = camera_entity.get<Transform>()->world();
+	gbuffer_resources.history_camera[frame.index % HISTORY_COUNT] = {camera_view, camera_projection};
 
-	shader_info.path = "shaders/denoising/vertical.comp";
+	///--------------------------------RAYTRACING--------------------------------///
+	raytracer->traceRays(frame, gbuffer_resources, scene_resources.root_acceleration_structure);
 
-	shader_info.stage = SHADER_STAGE_COMPUTE;
-	shader_info.path = "shaders/denoising/horizontal.comp";
-	denoising_resources.horizontal_blur_shader = Resources::createShader(shader_info);
-	shader_info.path = "shaders/denoising/vertical.comp";
-	denoising_resources.vertical_blur_shader = Resources::createShader(shader_info);
-
-	ComputePipelineInfo compute_pipeline_info{};
-	compute_pipeline_info.compute_shader = denoising_resources.horizontal_blur_shader;
-	denoising_resources.horizontal_blur_pipeline = Resources::createComputePipeline(compute_pipeline_info);
-	compute_pipeline_info.compute_shader = denoising_resources.vertical_blur_shader;
-	denoising_resources.vertical_blur_pipeline = Resources::createComputePipeline(compute_pipeline_info);
-
-	ComputeInstanceInfo compute_instance_info{};
-	compute_instance_info.compute_pipeline = denoising_resources.horizontal_blur_pipeline;
-	denoising_resources.horizontal_blur_instance = Resources::createComputeInstance(compute_instance_info);
-
-	compute_instance_info.compute_pipeline = denoising_resources.vertical_blur_pipeline;
-	denoising_resources.vertical_blur_instance = Resources::createComputeInstance(compute_instance_info);
-
-	denoising_resources.vertical_blur_instance->setImageArray("historyAlbedo", gbuffer_resources.history_albedo.data(), HISTORY_COUNT);
-	denoising_resources.vertical_blur_instance->setImageArray("historyNormalDepth", gbuffer_resources.history_normal_depth.data(), HISTORY_COUNT);
-	denoising_resources.vertical_blur_instance->setImageArray("historyMotion", gbuffer_resources.history_motion.data(), HISTORY_COUNT);
-	//denoising_resources.vertical_blur_instance->setUniform("historyCamera", &gbuffer_resources.history_camera);
-
-	denoising_resources.vertical_blur_instance->setImage("inputImage", gbuffer_resources.denoiser_temporal_accumulation_texture);
-	denoising_resources.vertical_blur_instance->setImage("outputImage", gbuffer_resources.denoiser_blur_texture);
-
-	denoising_resources.horizontal_blur_instance->setImageArray("historyAlbedo", gbuffer_resources.history_albedo.data(), HISTORY_COUNT);
-	denoising_resources.horizontal_blur_instance->setImageArray("historyNormalDepth", gbuffer_resources.history_normal_depth.data(), HISTORY_COUNT);
-	denoising_resources.horizontal_blur_instance->setImageArray("historyMotion", gbuffer_resources.history_motion.data(), HISTORY_COUNT);
-	//denoising_resources.horizontal_blur_instance->setUniform("historyCamera", &gbuffer_resources.history_camera);
-
-	denoising_resources.horizontal_blur_instance->setImage("inputImage", gbuffer_resources.denoiser_blur_texture);
-	denoising_resources.horizontal_blur_instance->setImage("outputImage", gbuffer_resources.denoiser_output_texture);
-}
-
-void RaytracingScene::createRaytracingResources() {
-
-
+	//--------------------------------DENOISING--------------------------------/
+	if (render_mode >= BLURRED_IRRADIANCE) {
+		denoiser->blurIrradiance(frame, gbuffer_resources);
+	}
+	if (render_mode >= ACCUMULATED) {
+		denoiser->accumulate(frame, gbuffer_resources);
+	}
+	frame.index++;
 }
 
 void RaytracingScene::loadAssets() {
@@ -82,15 +58,19 @@ void RaytracingScene::loadAssets() {
 void RaytracingScene::createScene() {
 
 	mat4 transform_aabb_floor(1.0f);
-	transform_aabb_floor = glm::translate(transform_aabb_floor, vec3(0, -0.5, 0));
+	transform_aabb_floor = glm::translate(transform_aabb_floor, vec3(0, -1, 0));
 	transform_aabb_floor = glm::scale(transform_aabb_floor, vec3(1000, 1, 1000));
 
 	//todo: create a single bottom level acceleration structure from mesh inside the model
 	std::vector<AccelerationStructureInstance> sponza_acceleration_structure_instances = sponza_model->getAccelerationStructureInstances();
 	scene_resources.acceleration_structure_instances.insert(scene_resources.acceleration_structure_instances.end(), sponza_acceleration_structure_instances.begin(),
 	                                                        sponza_acceleration_structure_instances.end());
-	scene_resources.acceleration_structure_instances.push_back(AccelerationStructureInstance{0, SHADER_GROUP_TYPE_BOX, transform_aabb_floor, ACCELERATION_STRUCTURE_TYPE_AABB, 0});
 
+	scene_resources.acceleration_structure_instances.push_back(AccelerationStructureInstance{0,
+	                                                                                         SHADER_GROUP_TYPE_BOX,
+	                                                                                         transform_aabb_floor,
+	                                                                                         ACCELERATION_STRUCTURE_TYPE_AABB,
+	                                                                                         0});
 
 	Entity camera_entity = createEntity3D();
 	camera_entity.attach<Camera>();
@@ -104,10 +84,10 @@ void RaytracingScene::createScene() {
 
 RaytracingScene::RaytracingScene() {
 	raytracer = new Raytracer();
+	denoiser = new Denoiser();
 
 	createGBuffer(Graphics::getDefaultRenderTarget()->getResolution().x, Graphics::getDefaultRenderTarget()->getResolution().y);
-	createRaytracingResources();
-	createDenoisingResources();
+
 	loadAssets();
 	createScene();
 
@@ -154,10 +134,13 @@ RaytracingScene::RaytracingScene() {
 	raytracer->setGBufferUniforms(gbuffer_resources);
 	raytracer->setSceneUniforms(scene_resources);
 
+	denoiser->setGBufferUniforms(gbuffer_resources);
+	denoiser->setSceneUniforms(scene_resources);
+
 	Graphics::getDefaultRenderTarget()->onResolutionChange.subscribe(this, &RaytracingScene::onResolutionChange);
 }
 
-void RaytracingScene::createGBuffer(uint32_t width, uint32_t height) {
+void RaytracingScene::destroyGBuffer() {
 	for (Image *albedo: gbuffer_resources.history_albedo) {
 		delete albedo;
 	}
@@ -167,24 +150,28 @@ void RaytracingScene::createGBuffer(uint32_t width, uint32_t height) {
 	for (Image *motion: gbuffer_resources.history_motion) {
 		delete motion;
 	}
-
 	for (Image *irradiance: gbuffer_resources.history_irradiance) {
 		delete irradiance;
 	}
-	if (gbuffer_resources.denoiser_blur_texture != nullptr) {
-		delete gbuffer_resources.denoiser_blur_texture;
+	for (Image *position: gbuffer_resources.history_position) {
+		delete position;
+	}
+	if (gbuffer_resources.denoiser_irradiance_vertical_blur_texture != nullptr) {
+		delete gbuffer_resources.denoiser_irradiance_vertical_blur_texture;
 	}
 	if (gbuffer_resources.denoiser_temporal_accumulation_texture != nullptr) {
 		delete gbuffer_resources.denoiser_temporal_accumulation_texture;
-	}
-	if (gbuffer_resources.denoiser_output_texture != nullptr) {
-		delete gbuffer_resources.denoiser_output_texture;
 	}
 
 	gbuffer_resources.history_albedo.clear();
 	gbuffer_resources.history_normal_depth.clear();
 	gbuffer_resources.history_motion.clear();
 	gbuffer_resources.history_irradiance.clear();
+	gbuffer_resources.history_position.clear();
+}
+
+void RaytracingScene::createGBuffer(uint32_t width, uint32_t height) {
+	destroyGBuffer();
 
 	ImageInfo info{};
 	info.width = width;
@@ -200,11 +187,11 @@ void RaytracingScene::createGBuffer(uint32_t width, uint32_t height) {
 		gbuffer_resources.history_normal_depth.push_back(Resources::createTexture(info));
 		gbuffer_resources.history_irradiance.push_back(Resources::createTexture(info));
 		gbuffer_resources.history_motion.push_back(Resources::createTexture(info));
+		gbuffer_resources.history_position.push_back(Resources::createTexture(info));
 	}
 
 	gbuffer_resources.denoiser_temporal_accumulation_texture = Resources::createTexture(info);
-	gbuffer_resources.denoiser_blur_texture = Resources::createTexture(info);
-	gbuffer_resources.denoiser_output_texture = Resources::createTexture(info);
+	gbuffer_resources.denoiser_irradiance_vertical_blur_texture = Resources::createTexture(info);
 }
 
 void RaytracingScene::onResolutionChange(RenderTarget *rt) {
@@ -215,48 +202,10 @@ void RaytracingScene::onResolutionChange(RenderTarget *rt) {
 	camera->setRenderTarget(rt);
 }
 
-void RaytracingScene::render() {
-	Scene::render();
-	Entity camera_entity = getCameraEntity();
-	if (!paused)
-		frame.time = time;
-
-	mat4 camera_projection = camera_entity.get<Camera>()->projection;
-	mat4 camera_view = camera_entity.get<Transform>()->world();
-	gbuffer_resources.history_camera[frame.index % HISTORY_COUNT] = {camera_view, camera_projection};
-
-	///--------------------------------RAYTRACING--------------------------------///
-	raytracer->tracePrimaryRays(frame, gbuffer_resources, scene_resources.root_acceleration_structure);
-
-	//--------------------------------DENOISING--------------------------------/
-	if (render_mode >= ACCUMULATED) {
-		//todo:TEMPORAL ACCUMULATION
-	}
-	if (render_mode >= DENOISED) {
-		denoising_resources.vertical_blur_instance->setUniform("frame", &frame, Graphics::getCurrentFrame());
-		denoising_resources.horizontal_blur_instance->setUniform("frame", &frame, Graphics::getCurrentFrame());
-
-		ComputeDispatchCmdInfo compute_dispatch_cmd_info{};
-		compute_dispatch_cmd_info.pipeline_instance = denoising_resources.vertical_blur_instance;
-		compute_dispatch_cmd_info.size_x = gbuffer_resources.denoiser_output_texture->getSize().x;
-		compute_dispatch_cmd_info.size_y = gbuffer_resources.denoiser_output_texture->getSize().y;
-		compute_dispatch_cmd_info.size_z = 1;
-		Graphics::computeDispatch(compute_dispatch_cmd_info);
-		compute_dispatch_cmd_info.pipeline_instance = denoising_resources.horizontal_blur_instance;
-		Graphics::computeDispatch(compute_dispatch_cmd_info);
-	}
-
-
-	//denoising_resources.vertical_blur_instance->setUniform("camera_history", gbuffer_resources.history_camera.data(), Graphics::getCurrentFrame());
-	//denoising_resources.horizontal_blur_instance->setUniform("camera_history", gbuffer_resources.history_camera.data(), Graphics::getCurrentFrame());
-
-	frame.index++;
-}
-
 Image *RaytracingScene::getMainCameraTexture() {
 	switch (render_mode) {
-		case DENOISED:
-			return gbuffer_resources.denoiser_output_texture;
+		case BLURRED_IRRADIANCE:
+			return gbuffer_resources.history_irradiance[(frame.index - 1) % HISTORY_COUNT];
 			break;
 		case ACCUMULATED:
 			return gbuffer_resources.denoiser_temporal_accumulation_texture;
@@ -280,10 +229,10 @@ void RaytracingScene::update(float delta) {
 	Scene::update(delta);
 
 	if (Input::getKeyDown(KEY_NUMBER_1)) {
-		render_mode = DENOISED;
+		render_mode = ACCUMULATED;
 	}
 	if (Input::getKeyDown(KEY_NUMBER_2)) {
-		render_mode = ACCUMULATED;
+		render_mode = BLURRED_IRRADIANCE;
 	}
 	if (Input::getKeyDown(KEY_NUMBER_3)) {
 		render_mode = IRRADIANCE;
@@ -358,35 +307,8 @@ void RaytracingScene::update(float delta) {
 
 RaytracingScene::~RaytracingScene() {
 	delete raytracer;
-
-	//GBUFFER
-	for (Image *albedo: gbuffer_resources.history_albedo) {
-		delete albedo;
-	}
-	for (Image *normal_depth: gbuffer_resources.history_normal_depth) {
-		delete normal_depth;
-	}
-	for (Image *motion: gbuffer_resources.history_motion) {
-		delete motion;
-	}
-
-	for (Image *irradiance: gbuffer_resources.history_irradiance) {
-		delete irradiance;
-	}
-	if (gbuffer_resources.denoiser_output_texture != nullptr) {
-		delete gbuffer_resources.denoiser_output_texture;
-	}
-	if (gbuffer_resources.denoiser_blur_texture != nullptr) {
-		delete gbuffer_resources.denoiser_blur_texture;
-	}
-	if (gbuffer_resources.denoiser_temporal_accumulation_texture != nullptr) {
-		delete gbuffer_resources.denoiser_temporal_accumulation_texture;
-	}
-
-	gbuffer_resources.history_albedo.clear();
-	gbuffer_resources.history_normal_depth.clear();
-	gbuffer_resources.history_motion.clear();
-	gbuffer_resources.history_irradiance.clear();
+	delete denoiser;
+	destroyGBuffer();
 
 	//SCENE
 	delete scene_resources.root_acceleration_structure;
@@ -396,13 +318,6 @@ RaytracingScene::~RaytracingScene() {
 
 	delete sponza_model;
 	delete model_parser;
-
-	delete denoising_resources.horizontal_blur_instance;
-	delete denoising_resources.vertical_blur_instance;
-	delete denoising_resources.horizontal_blur_pipeline;
-	delete denoising_resources.vertical_blur_pipeline;
-	delete denoising_resources.horizontal_blur_shader;
-	delete denoising_resources.vertical_blur_shader;
 }
 
 void RaytracingScene::createSphereField(int n) {

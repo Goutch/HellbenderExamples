@@ -13,7 +13,7 @@ public:
 
 	~Raytracer();
 
-	void tracePrimaryRays(Frame &frame, GBufferResources &gbuffer_resources, RootAccelerationStructure *root_acceleration_structure);
+	void traceRays(Frame &frame, GBufferResources &gbuffer_resources, RootAccelerationStructure *root_acceleration_structure);
 
 	void setGBufferUniforms(GBufferResources &gbuffer_resources);
 

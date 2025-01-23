@@ -14,4 +14,5 @@ public:
 	void setSceneUniforms(SceneResources &scene_resources);
 
 	void accumulate(Frame &frame, GBufferResources &gbuffer_resources);
+	void blurIrradiance(Frame &frame, GBufferResources &gbuffer_resources);
 };

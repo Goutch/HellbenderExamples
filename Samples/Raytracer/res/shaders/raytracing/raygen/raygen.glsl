@@ -58,7 +58,7 @@ Ray getRay(bool jitter, int history_index)
 }
 uint getRNGState()
 {
-    float x = frame.data.index * PHI;
+    float x = float(frame.data.index)* PHI;
     x= mod(x, 1.0);
     x*=1000;
 
@@ -93,33 +93,46 @@ void main()
     float tmin = 0.001;
     float tmax = 1000.0;
 
-    payload.irradiance = vec3(0.0, 0.0, 0.0);
-    payload.albedo = vec3(0.0, 0.0, 0.0);
-    payload.hit_sky = false;
-    payload.hit_t = 0.0;
-    payload.hit_normal = vec3(0.0, 1.0, 0.0);
+    vec4 albedo = vec4(0, 0, 0, 1.0);
+    vec4 velocity = vec4(0, 0, 0, 1.0);
+    vec4 normalDepth = vec4(0, 0, 0, 1.0);
+    vec4 irradiance = vec4(0, 0, 0, 1.0);
+    vec4 hit_position = vec4(0, 0, 0, 1.0);
+
+    float weight = 1.0 / float(frame.data.sample_count);
     payload.rng_state = getRNGState();
-    payload.bounce_count = 0;
+    for (int i = 0; i < frame.data.sample_count; i++)
+    {
+        payload.irradiance = vec3(0.0, 0.0, 0.0);
+        payload.albedo = vec3(0.0, 0.0, 0.0);
+        payload.hit_sky = false;
+        payload.hit_t = 0.0;
+        payload.hit_normal = vec3(0.0, 1.0, 0.0);
 
-    traceRayEXT(topLevelAS, //topLevelacceleationStructure
-    gl_RayFlagsOpaqueEXT, //rayFlags
-    0xff, //cullMask
-    0, //sbtRecordOffset
-    1, //sbtRecordStride
-    0, //missIndex
-    ray.origin.xyz, //origin
-    tmin, //Tmin
-    ray.direction, //direction
-    tmax, //Tmax
-    0);//payload location
+        payload.bounce_count = 0;
 
-    vec4 albedo = vec4(payload.albedo, 1.0);
-    vec4 velocity = vec4(calculateVelocity(ray.direction, ray.origin.xyz), 0.0, 0.0);
-    vec4 normalDepth = vec4(payload.hit_normal, 1 - (payload.hit_t / tmax));
-    vec4 irradiance = vec4(payload.irradiance, 1.0);
+        traceRayEXT(topLevelAS, //topLevelacceleationStructure
+        gl_RayFlagsOpaqueEXT, //rayFlags
+        0xff, //cullMask
+        0, //sbtRecordOffset
+        1, //sbtRecordStride
+        0, //missIndex
+        ray.origin.xyz, //origin
+        tmin, //Tmin
+        ray.direction, //direction
+        tmax, //Tmax
+        0);//payload location
+
+        irradiance += vec4(payload.irradiance, 1.0);
+    }
+    albedo = vec4(payload.albedo, 1.0);
+    normalDepth = vec4(payload.hit_normal, 1 - (payload.hit_t / tmax));
+    velocity = vec4(calculateVelocity(ray.direction, ray.origin.xyz), 0.0, 1.0);
+    hit_position = vec4(ray.origin.xyz + (payload.hit_t * ray.direction), 1.0);
 
     imageStore(historyAlbedo[history_index], ivec2(gl_LaunchIDEXT.xy), albedo);
     imageStore(historyNormalDepth[history_index], ivec2(gl_LaunchIDEXT.xy), normalDepth);
     imageStore(historyMotion[history_index], ivec2(gl_LaunchIDEXT.xy), velocity);
     imageStore(historyIrradiance[history_index], ivec2(gl_LaunchIDEXT.xy), irradiance);
+    imageStore(historyPosition[history_index], ivec2(gl_LaunchIDEXT.xy), hit_position);
 }

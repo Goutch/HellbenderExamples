@@ -38,8 +38,8 @@ void main()
 
         payload.bounce_count++;
         payload.irradiance = traceSecondaryRay(incoming_ray_dir.xyz, hit_position.xyz, material, normal.xyz, irradianceAlbedo);
+        payload.bounce_count = bounce_count;
     }
-    payload.bounce_count = bounce_count;
     payload.hit_normal = normal;
     payload.albedo = albedo.rgb;
     payload.hit_t = gl_HitTEXT;

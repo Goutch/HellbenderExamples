@@ -29,6 +29,7 @@ void main()
     int bounce_count = payload.bounce_count;
     if (bounce_count<frame.data.max_bounces)
     {
+
         payload.bounce_count++;
         payload.irradiance = traceSecondaryRay(gl_WorldRayDirectionEXT, hit_position, material, normal, albedo);
         payload.bounce_count = bounce_count;

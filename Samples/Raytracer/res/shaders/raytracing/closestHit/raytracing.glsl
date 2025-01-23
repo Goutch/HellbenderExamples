@@ -82,13 +82,10 @@ void trace(vec3 origin, vec3 dir, float tmax)
 }
 vec3 traceSecondaryRay(vec3 incomingRayDir, vec3 position, MaterialData material, vec3 normal, vec4 albedo)
 {
-
-    uint numSamples = 1;
     //first bounce
     if (payload.bounce_count == 1)
     {
         albedo = vec4(1.0);
-        numSamples = max(numSamples, 1);
     }
 
     vec3 to_light_dir= normalize(vec3(sin(frame.data.time), sin(frame.data.time), cos(frame.data.time)));
@@ -113,21 +110,19 @@ vec3 traceSecondaryRay(vec3 incomingRayDir, vec3 position, MaterialData material
     }
     else
     {
-        for (uint i = 0; i < numSamples; i++)
-        {
-            payload.hit_sky=false;
-            new_dir = RamdomDiffuseVector(normal);
+        payload.hit_sky=false;
+        new_dir = RamdomDiffuseVector(normal);
 
-            if (material.roughness<0.999)
-            {
-                new_dir = RandomSpecularVector(reflect(incomingRayDir, normal), new_dir, material.roughness);
-            }
-            trace(position, new_dir, 1000.0);
-            irradiance += payload.irradiance*dot(normal, new_dir);
+        if (material.roughness<0.999)
+        {
+            new_dir = RandomSpecularVector(reflect(incomingRayDir, normal), new_dir, material.roughness);
         }
+
+        trace(position, new_dir, 1000.0);
+        irradiance += payload.irradiance*dot(normal, new_dir);
     }
 
-    irradiance /= float(numSamples+num_sun_samples);
+    irradiance /= float(1+num_sun_samples);
 
     return (material.emission.rgb) + (albedo.rgb * irradiance);
 }

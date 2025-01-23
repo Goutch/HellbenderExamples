@@ -6,6 +6,7 @@
 #include "DataStructures.h"
 #include "RaytracingModelParser.h"
 #include "Raytracer.h"
+#include "Denoiser.h"
 //#include "NRD.h"
 
 using namespace HBE;
@@ -35,21 +36,20 @@ class RaytracingScene : public Scene {
 		DEPTH = 1,
 		ALBEDO = 2,
 		IRRADIANCE = 3,
-		RAW = 4,
+		BLURRED_IRRADIANCE = 4,
 		ACCUMULATED = 5,
-		DENOISED = 6,
 	};
 private:
+
 	GBufferResources gbuffer_resources;
 	SceneResources scene_resources;
-	DenoisingResources denoising_resources;
 	Raytracer *raytracer;
+	Denoiser *denoiser;
 	Frame frame{};
 
 	//assets
 	RaytracingModelParser *model_parser;
 	Model *sponza_model;
-
 
 	bool paused = false;
 	float time = 0;
@@ -58,11 +58,7 @@ public:
 
 	void createGBuffer(uint32_t width, uint32_t height);
 
-	void createDenoisingResources();
-
 	void onResolutionChange(RenderTarget *rt);
-
-	void createRaytracingResources();
 
 	void loadAssets();
 
@@ -83,6 +79,8 @@ public:
 	void createCornelBox();
 
 	RaytracingScene();
+
+	void destroyGBuffer();
 };
 
 

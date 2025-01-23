@@ -1,5 +1,5 @@
 #include "../data_structures.glsl"
-#define HISTORY_COUNT 8
+#define HISTORY_COUNT 4
 const float T_MIN = 0.01;
 const float E = 2.71828182845904523536028747135266249;
 const float PHI = 1.61803398874989484820459;// Φ = Golden Ratio
@@ -11,8 +11,9 @@ layout (binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 layout (binding = 1, set = 0, rgba32f) uniform image2D historyAlbedo[HISTORY_COUNT];
 layout (binding = 2, set = 0, rgba32f) uniform image2D historyNormalDepth[HISTORY_COUNT];
 layout (binding = 3, set = 0, rgba32f) uniform image2D historyMotion[HISTORY_COUNT];
-layout (binding = 4, set = 0, rgba32f) uniform image2D historyPositionRoughness[HISTORY_COUNT];
+layout (binding = 4, set = 0, rgba32f) uniform image2D historyPosition[HISTORY_COUNT];
 layout (binding = 5, set = 0, rgba32f) uniform image2D historyIrradiance[HISTORY_COUNT];
+
 layout (binding = 6, set = 0) uniform CameraHistory
 {
     CameraProperties properties[HISTORY_COUNT];

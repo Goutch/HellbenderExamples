@@ -39,10 +39,10 @@ struct GBufferResources {
 	std::vector<Image *> history_normal_depth;
 	std::vector<Image *> history_motion;
 	std::vector<Image *> history_irradiance;
+	std::vector<Image *> history_position;
 	//denoiser
 	Image *denoiser_temporal_accumulation_texture = nullptr;
-	Image *denoiser_blur_texture = nullptr;
-	Image *denoiser_output_texture = nullptr;
+	Image *denoiser_irradiance_vertical_blur_texture = nullptr;
 };
 
 struct RaytracerResources {
@@ -64,6 +64,7 @@ struct SceneResources {
 	std::vector<MaterialData> materials;
 	StorageBuffer *material_buffer;
 
+	//deleted in model parser
 	std::vector<Mesh *> meshes;
 	std::vector<StorageBuffer *> normals;
 	std::vector<StorageBuffer *> indices;
