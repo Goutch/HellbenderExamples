@@ -80,32 +80,30 @@ void trace(vec3 origin, vec3 dir, float tmax)
     tmax, //Tmax
     0);//payload location
 }
-vec3 traceSecondaryRay(vec3 incomingRayDir, vec3 position, MaterialData material, vec3 normal, vec4 albedo)
+vec3 traceSecondaryRay(inout vec3 incomingRayDir, vec3 position, MaterialData material, vec3 normal, vec3 albedo, bool trace_light)
 {
-    //first bounce
-    if (payload.bounce_count == 1)
-    {
-        albedo = vec4(1.0);
-    }
-
     vec3 to_light_dir= normalize(vec3(sin(frame.data.time), sin(frame.data.time), cos(frame.data.time)));
-    float light_dot_product=dot(normal, to_light_dir);
-    vec3 irradiance =vec3(0.0);
+
+    vec3 light_irradiance =vec3(0.0);
+    vec3 gi_irradiance =vec3(0.0);
     int num_sun_samples = 0;
 
     vec3 new_dir;
-    if (light_dot_product>0.0 && material.roughness>0.999 && smoothstep(0, 1, light_dot_product)>RandomFloat01(payload.rng_state))
+    if (trace_light)
     {
-        payload.hit_sky=false;
-        payload.irradiance = vec3(0.0);
-        vec3 diffuse_vector = RamdomDiffuseVector(to_light_dir);
-        new_dir = RandomSpecularVector(to_light_dir, diffuse_vector, LIGHT_BIAS);
-        traceLight(position, new_dir, 1000.0);;
+        float light_dot_product=dot(normal, to_light_dir);
+        if (light_dot_product>0.0 && material.roughness>0.999 && smoothstep(0, 1, light_dot_product)>RandomFloat01(payload.rng_state))
+        {
+            payload.hit_sky=false;
+            payload.irradiance = vec3(0.0);
+            vec3 diffuse_vector = RamdomDiffuseVector(to_light_dir);
+            new_dir = RandomSpecularVector(to_light_dir, diffuse_vector, LIGHT_BIAS);
+            traceLight(position, new_dir, 1000.0);;
+        }
     }
-
     if (payload.hit_sky)
     {
-        irradiance += payload.irradiance;
+        light_irradiance += payload.irradiance;
         num_sun_samples++;
     }
     else
@@ -119,11 +117,13 @@ vec3 traceSecondaryRay(vec3 incomingRayDir, vec3 position, MaterialData material
         }
 
         trace(position, new_dir, 1000.0);
-        irradiance += payload.irradiance*dot(normal, new_dir);
+
+        gi_irradiance += payload.irradiance*dot(normal, new_dir);
     }
 
-    irradiance /= float(1+num_sun_samples);
+    vec3 irradiance = light_irradiance+gi_irradiance;
 
-    return (material.emission.rgb) + (albedo.rgb * irradiance);
+    incomingRayDir = new_dir;
+    return (material.emission.rgb) + (albedo * irradiance);
 }
 

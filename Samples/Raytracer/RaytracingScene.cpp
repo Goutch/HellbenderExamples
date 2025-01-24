@@ -16,7 +16,7 @@ void RaytracingScene::render() {
 
 	//--------------------------------DENOISING--------------------------------/
 	if (render_mode >= BLURRED_IRRADIANCE) {
-		denoiser->blurIrradiance(frame, gbuffer_resources);
+		//denoiser->blurIrradiance(frame, gbuffer_resources);
 	}
 	if (render_mode >= ACCUMULATED) {
 		denoiser->accumulate(frame, gbuffer_resources);

@@ -1,5 +1,5 @@
 #include "../data_structures.glsl"
-#define HISTORY_COUNT 4
+#define HISTORY_COUNT 16
 const float T_MIN = 0.01;
 const float E = 2.71828182845904523536028747135266249;
 const float PHI = 1.61803398874989484820459;// Φ = Golden Ratio

@@ -92,7 +92,7 @@ void Raytracer::createPrimaryRaytracingResources() {
 
 	primary_raytraycing_pipeline_info.shader_group_count = primary_raytracing_resources.shader_groups.size();
 	primary_raytraycing_pipeline_info.shader_groups = primary_raytracing_resources.shader_groups.data();
-	primary_raytraycing_pipeline_info.max_recursion_depth = 4;
+	primary_raytraycing_pipeline_info.max_recursion_depth = 1;
 
 	primary_raytracing_resources.pipeline = Resources::createRaytracingPipeline(primary_raytraycing_pipeline_info);
 

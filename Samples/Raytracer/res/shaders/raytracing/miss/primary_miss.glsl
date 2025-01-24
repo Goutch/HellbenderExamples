@@ -8,7 +8,6 @@
 void main()
 {
     vec3 irradiance = calculateAtmosphericScatering();
-    payload.albedo = irradiance;
     payload.irradiance = irradiance;
     payload.hit_sky = true;
     payload.hit_t = gl_RayTmaxEXT;

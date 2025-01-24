@@ -3,10 +3,10 @@ set(CMAKE_CXX_STANDARD 20)
 
 project(Raytracer CXX)
 
-set(NRD_EMBEDS_DXBC_SHADERS OFF)
-set(NRD_EMBEDS_DXIL_SHADERS OFF)
-set(NRD_SHADERS_PATH ${CMAKE_CURRENT_SOURCE_DIR}/res/shaders/denoising/nrd)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/NRD)
+#set(NRD_EMBEDS_DXBC_SHADERS OFF)
+#set(NRD_EMBEDS_DXIL_SHADERS OFF)
+#set(NRD_SHADERS_PATH ${CMAKE_CURRENT_SOURCE_DIR}/res/shaders/denoising/nrd)
+#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/NRD)
 
 add_executable(${PROJECT_NAME}
         main.cpp

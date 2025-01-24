@@ -31,10 +31,10 @@ struct CameraProperties
 
 struct PrimaryRayData{
     vec3 irradiance;
-    vec3 albedo;
-    uint rng_state;
     bool hit_sky;
     vec3 hit_normal;
+    vec2 hit_uv;
+    uint hit_material;
     float hit_t;
-    int bounce_count;
+    uint rng_state;
 };

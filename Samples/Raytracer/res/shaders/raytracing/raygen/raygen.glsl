@@ -6,6 +6,7 @@
 
 #define PRIMARY_PAYLOAD_OUT
 #include "../common.glsl"
+#include "raytracing.glsl"
 vec2 offsets[16] = {
 vec2(0.500000, 0.333333),
 vec2(0.250000, 0.666667),
@@ -82,34 +83,51 @@ vec2 calculateVelocity(vec3 ray_dir, vec3 ray_origin)
 
     return velocity.xy;
 }
+
+vec3 getMaterialAlbedo(MaterialData material, vec2 uvs)
+{
+    vec4 albedo = material.albedo;
+    if (material.albedo_index >= 0)
+    {
+        albedo *= texture(textures[nonuniformEXT(material.albedo_index)], uvs);
+    }
+    return albedo.rgb;
+}
+vec3 getMaterialNormal(vec3 normal, MaterialData material, vec2 uvs)
+{
+    if (material.normal_index >= 0)
+    {
+        vec3 normalMap = texture(textures[nonuniformEXT(material.normal_index)], uvs).rgb;
+        normal = normalize(normal + normalMap);
+    }
+    return normal;
+}
+
 void main()
 {
     int history_index = int(mod(frame.data.index, HISTORY_COUNT));
     uint global_thread_id = gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x;
     uint thread_group_id = global_thread_id / gl_SubgroupSize;
 
-    Ray ray = getRay(true, history_index);
+    Ray primary_ray = getRay(true, history_index);
 
     float tmin = 0.001;
     float tmax = 1000.0;
 
-    vec4 albedo = vec4(0, 0, 0, 1.0);
+    vec3 primary_albedo = vec3(0, 0, 0);
     vec4 velocity = vec4(0, 0, 0, 1.0);
     vec4 normalDepth = vec4(0, 0, 0, 1.0);
     vec4 irradiance = vec4(0, 0, 0, 1.0);
-    vec4 hit_position = vec4(0, 0, 0, 1.0);
 
-    float weight = 1.0 / float(frame.data.sample_count);
+    float sample_weight = 1.0 / float(frame.data.sample_count);
     payload.rng_state = getRNGState();
-    for (int i = 0; i < frame.data.sample_count; i++)
+
+    for (int sample_index = 0; sample_index < frame.data.sample_count; sample_index++)
     {
         payload.irradiance = vec3(0.0, 0.0, 0.0);
-        payload.albedo = vec3(0.0, 0.0, 0.0);
         payload.hit_sky = false;
         payload.hit_t = 0.0;
         payload.hit_normal = vec3(0.0, 1.0, 0.0);
-
-        payload.bounce_count = 0;
 
         traceRayEXT(topLevelAS, //topLevelacceleationStructure
         gl_RayFlagsOpaqueEXT, //rayFlags
@@ -117,22 +135,67 @@ void main()
         0, //sbtRecordOffset
         1, //sbtRecordStride
         0, //missIndex
-        ray.origin.xyz, //origin
+        primary_ray.origin.xyz, //origin
         tmin, //Tmin
-        ray.direction, //direction
+        primary_ray.direction, //direction
         tmax, //Tmax
         0);//payload location
 
-        irradiance += vec4(payload.irradiance, 1.0);
-    }
-    albedo = vec4(payload.albedo, 1.0);
-    normalDepth = vec4(payload.hit_normal, 1 - (payload.hit_t / tmax));
-    velocity = vec4(calculateVelocity(ray.direction, ray.origin.xyz), 0.0, 1.0);
-    hit_position = vec4(ray.origin.xyz + (payload.hit_t * ray.direction), 1.0);
+        if (payload.hit_sky)
+        {
+            normalDepth = vec4(payload.hit_normal, 1 - (payload.hit_t / tmax));
+            irradiance += vec4(payload.irradiance, 1.0);
+            primary_albedo += irradiance.rgb;
+            break;
+        }
 
-    imageStore(historyAlbedo[history_index], ivec2(gl_LaunchIDEXT.xy), albedo);
+        //did not hit the sky so there is a material
+        MaterialData material  = materials.materials[payload.hit_material];
+        //extract normal from normal texture
+        vec3 normal = getMaterialNormal(payload.hit_normal, material, payload.hit_uv);
+        //extract albedo from albedo texture
+        vec3 albedo = getMaterialAlbedo(material, payload.hit_uv);
+        normalDepth = vec4(normal, 1 - (payload.hit_t / tmax));
+
+        primary_albedo += albedo * sample_weight;
+
+        vec3 incoming_ray_dir  = primary_ray.direction;
+        vec3 incoming_ray_origin = primary_ray.origin;
+        for (int bounce = 0; bounce < frame.data.max_bounces;bounce++)
+        {
+            vec3 hit_position = incoming_ray_origin + payload.hit_t * incoming_ray_dir;
+
+            vec3 irradianceAlbedo = albedo;
+            if (bounce==0)
+            {
+                irradianceAlbedo = vec3(1.0);
+            }
+            payload.irradiance = traceSecondaryRay(incoming_ray_dir,
+            hit_position.xyz,
+            material,
+            normal.xyz,
+            irradianceAlbedo, bounce == 0);
+            if (payload.hit_sky)
+            {
+                break;
+            }
+            material  = materials.materials[payload.hit_material];
+            //extract normal from normal texture
+            normal = getMaterialNormal(payload.hit_normal, material, payload.hit_uv);
+            //extract albedo from albedo texture
+            albedo = getMaterialAlbedo(material, payload.hit_uv);
+            incoming_ray_origin = hit_position;
+        }
+
+        irradiance += vec4(payload.irradiance, 1.0) *sample_weight;
+    }
+
+    velocity = vec4(calculateVelocity(primary_ray.direction, primary_ray.origin.xyz), 0.0, 1.0);
+    vec4 primary_hit_position = vec4(primary_ray.origin.xyz + (normalDepth.w* primary_ray.direction), 1.0);
+
+    imageStore(historyAlbedo[history_index], ivec2(gl_LaunchIDEXT.xy), vec4(primary_albedo, 1.0));
     imageStore(historyNormalDepth[history_index], ivec2(gl_LaunchIDEXT.xy), normalDepth);
     imageStore(historyMotion[history_index], ivec2(gl_LaunchIDEXT.xy), velocity);
     imageStore(historyIrradiance[history_index], ivec2(gl_LaunchIDEXT.xy), irradiance);
-    imageStore(historyPosition[history_index], ivec2(gl_LaunchIDEXT.xy), hit_position);
+    imageStore(historyPosition[history_index], ivec2(gl_LaunchIDEXT.xy), primary_hit_position);
 }
