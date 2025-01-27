@@ -77,6 +77,7 @@ void RaytracingScene::createScene() {
 	camera_entity.get<Camera>()->setRenderTarget(Graphics::getDefaultRenderTarget());
 	camera_entity.get<Camera>()->active = false;
 	camera_entity.get<Transform>()->translate(vec3(0, 1, 0));
+	camera_entity.attach<CameraController>();
 	Camera *camera = camera_entity.get<Camera>();
 	setCameraEntity(camera_entity);
 	gbuffer_resources.history_camera.resize(HISTORY_COUNT, {camera_entity.get<Transform>()->world(), camera->projection});

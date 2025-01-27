@@ -53,7 +53,7 @@ private:
 
 	bool paused = false;
 	float time = 0;
-	RENDER_MODE render_mode = ALBEDO;
+	RENDER_MODE render_mode = ACCUMULATED;
 public:
 
 	void createGBuffer(uint32_t width, uint32_t height);
