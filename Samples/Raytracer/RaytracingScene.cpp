@@ -183,15 +183,15 @@ void RaytracingScene::createGBuffer(uint32_t width, uint32_t height) {
 	info.sampler_info.flags = IMAGE_SAMPLER_FLAG_NONE;
 
 	for (uint32_t i = 0; i < HISTORY_COUNT; i++) {
-		gbuffer_resources.history_albedo.push_back(Resources::createTexture(info));
-		gbuffer_resources.history_normal_depth.push_back(Resources::createTexture(info));
-		gbuffer_resources.history_irradiance.push_back(Resources::createTexture(info));
-		gbuffer_resources.history_motion.push_back(Resources::createTexture(info));
-		gbuffer_resources.history_position.push_back(Resources::createTexture(info));
+		gbuffer_resources.history_albedo.push_back(Resources::createImage(info));
+		gbuffer_resources.history_normal_depth.push_back(Resources::createImage(info));
+		gbuffer_resources.history_irradiance.push_back(Resources::createImage(info));
+		gbuffer_resources.history_motion.push_back(Resources::createImage(info));
+		gbuffer_resources.history_position.push_back(Resources::createImage(info));
 	}
 
-	gbuffer_resources.denoiser_temporal_accumulation_texture = Resources::createTexture(info);
-	gbuffer_resources.denoiser_irradiance_vertical_blur_texture = Resources::createTexture(info);
+	gbuffer_resources.denoiser_temporal_accumulation_texture = Resources::createImage(info);
+	gbuffer_resources.denoiser_irradiance_vertical_blur_texture = Resources::createImage(info);
 }
 
 void RaytracingScene::onResolutionChange(RenderTarget *rt) {
