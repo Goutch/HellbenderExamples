@@ -16,48 +16,50 @@ layout (binding = 5, set = 0, rgba32f) uniform image2D historyIrradiance[HISTORY
 
 layout (binding = 6, set = 0) uniform CameraHistory
 {
-    CameraProperties properties[HISTORY_COUNT];
+	CameraProperties properties[HISTORY_COUNT];
 } camera_history;
 #endif
 
-layout (binding =7, set = 0) uniform FrameUBO {
-    Frame data;
+layout (binding = 7, set = 0,rgb32f) uniform image2D blue_noise[64];
+
+layout (binding =8, set = 0) uniform FrameUBO {
+	Frame data;
 } frame;
 
-layout (binding = 8, set = 1, std430) readonly buffer MaterialDataBuffer
+layout (binding = 9, set = 1, std430) readonly buffer MaterialDataBuffer
 {
-    MaterialData materials[];
+	MaterialData materials[];
 } materials;
-layout (binding = 9, set = 2, std430) readonly buffer InstanceInfos
+layout (binding = 10, set = 2, std430) readonly buffer InstanceInfos
 {
-    InstanceInfo infos[];
+	InstanceInfo infos[];
 } instances;
-layout (binding = 10, set = 3) uniform sampler2D textures[];
+layout (binding = 11, set = 3) uniform sampler2D textures[];
 
-layout (binding = 11, set = 4, std430) readonly buffer MeshIndicesBuffers
+layout (binding = 12, set = 4, std430) readonly buffer MeshIndicesBuffers
 {
-    uint indices[];
+	uint indices[];
 } mesh_indices_buffers[];
-layout (binding = 12, set = 5, std430) readonly buffer MeshTexCoordsBuffers
+layout (binding = 13, set = 5, std430) readonly buffer MeshTexCoordsBuffers
 {
-    vec2 coords[];
+	vec2 coords[];
 } mesh_tex_coords_buffers[];
 
-layout (binding = 13, set = 6, std430) readonly buffer MeshNormalsBuffers
+layout (binding = 14, set = 6, std430) readonly buffer MeshNormalsBuffers
 {
-    float normals[];
+	float normals[];
 } mesh_normals_buffers[];
 
 #ifdef PRIMARY_PAYLOAD_IN
 layout (location = 0) rayPayloadInEXT PrimaryRayPayLoad
 {
-    PrimaryRayData payload;
+	PrimaryRayData payload;
 };
 #endif
 #ifdef  PRIMARY_PAYLOAD_OUT
 layout(location = 0) rayPayloadEXT PrimaryRayPayLoad
 {
-    PrimaryRayData payload;
+	PrimaryRayData payload;
 };
 #endif
 

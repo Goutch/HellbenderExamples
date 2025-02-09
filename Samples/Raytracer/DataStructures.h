@@ -52,6 +52,7 @@ struct RaytracerResources {
 	std::vector<Shader *> miss_shaders;
 	std::vector<Shader *> hit_shaders;
 	std::vector<RaytracingShaderGroup> shader_groups;
+	std::vector<Image*> st_blue_noise;
 };
 
 struct SceneResources {

@@ -5,9 +5,9 @@
 
 class RaytracingScene;
 
-class Raytracer {
+class Raytracer{
 	RaytracingScene *scene;
-	RaytracerResources primary_raytracing_resources;
+	RaytracerResources raytracing_resources;
 public:
 	Raytracer();
 
