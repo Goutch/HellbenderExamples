@@ -7,6 +7,7 @@ struct Frame {
     float density_falloff;
     float exposure;
     float gamma;
+    uint use_blue_noise;
 };
 struct MaterialData
 {

@@ -1,9 +1,11 @@
 #extension GL_GOOGLE_include_directive: require
+#include "../print.glsl"
 #include "../raytracing/data_structures.glsl"
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 1) in;
 
+
 #ifndef HISTORY_COUNT
-#define HISTORY_COUNT 16
+#define HISTORY_COUNT 8
 #endif
 
 #ifdef HISTORY_COUNT
@@ -22,30 +24,55 @@ layout (binding = 6, set = 0) uniform CameraHistory
 } camera_history;
 
 layout(binding = 7, set = 0, rgba32f) writeonly uniform image2D outputImage;
+
 #endif
+vec4 getHistoryWorldPosition(int i, vec2 uv, ivec2 image_coord)
+{
+    ivec2 resolution = imageSize(historyAlbedo[i]);
+    mat4 camera_transform = camera_history.properties[i].transform;
+    vec4 origin = camera_transform * vec4(0, 0, 0, 1);
+    mat4 camera_view_mat = inverse(camera_transform);
+    mat4 camera_proj_mat = camera_history.properties[i].projection;
+    mat4 camera_VP = camera_proj_mat * camera_view_mat;
+    vec2 centered_uvs = uv * 2.0 - 1.0;
+    vec4 target = inverse(camera_proj_mat) * vec4(centered_uvs, 1, 1);
+    vec4 direction = normalize(camera_transform * vec4(target.xyz, 0));
+    float t = imageLoad(historyNormalDepth[i], image_coord).w;
+    vec4 history_world_position = origin + (direction * t);
+
+    return history_world_position;
+}
+
 void main()
 {
     ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
 
     int current_history_index = int(mod(frame.data.index, HISTORY_COUNT));
     ivec2 resolution = imageSize(historyAlbedo[current_history_index]);
-    ivec2 texture_space_coord = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 image_coord = ivec2(gl_GlobalInvocationID.xy);
     vec2 uv = ((vec2(gl_GlobalInvocationID.xy) +vec2(0.5)) / vec2(resolution.xy));
-
     uint historySampleCount = 1;
 
-    vec4 albedo = imageLoad(historyAlbedo[current_history_index], texture_space_coord);
-    vec4 irradiance = imageLoad(historyIrradiance[current_history_index], texture_space_coord);
-    vec4 world_position = imageLoad(historyPosition[current_history_index], texture_space_coord);
+    vec4 albedo = imageLoad(historyAlbedo[current_history_index], image_coord);
+    vec4 irradiance = imageLoad(historyIrradiance[current_history_index], image_coord);
+    //vec4 world_position = imageLoad(historyPosition[current_history_index], image_coord);
+    if (gl_GlobalInvocationID.x == (resolution.x) / 2 && gl_GlobalInvocationID.y == (resolution.y / 2))
+    {
+        PRINT("--------------------START----------------------");
+    }
+    vec4 world_position = getHistoryWorldPosition(current_history_index, uv, image_coord);
+
+
+    vec4 normal_depth = imageLoad(historyNormalDepth[current_history_index], image_coord);
     for (int i = 1; i < HISTORY_COUNT-1; i++)
     {
         if (frame.data.index - i < 0)
         break;
 
+        image_coord = ivec2(floor(uv * vec2(resolution.xy)));
+        uv -= imageLoad(historyMotion[current_history_index], image_coord).xy;
 
-        texture_space_coord = ivec2(floor(uv * vec2(resolution.xy)));
-        uv -= imageLoad(historyMotion[current_history_index], texture_space_coord).xy;
-        texture_space_coord = ivec2(floor(uv* vec2(resolution.xy)));
+        image_coord = ivec2(floor(uv* vec2(resolution.xy)));
         current_history_index = int(mod(frame.data.index - i, HISTORY_COUNT));
 
         //this fragment was not in the history frame
@@ -54,19 +81,26 @@ void main()
             continue;
         }
 
-        vec4 history_world_position = imageLoad(historyPosition[current_history_index], texture_space_coord);
-        // this fragment was occluded in the history frame
-        if (distance(world_position.xyz, history_world_position.xyz) > 0.05f)
+        vec4 history_normal_depth = imageLoad(historyNormalDepth[current_history_index], image_coord);
+        //this fragment do not have the same normal as the history frame
+        if (dot(normal_depth.xyz, history_normal_depth.xyz) <0.85)
         {
-            //color += vec3(0, 0, 1);
-            //historySampleCount ++;
             continue;
         }
 
+
+        vec4 history_world_position = getHistoryWorldPosition(current_history_index, uv, image_coord);
+
+        float distance = distance(world_position.xyz, history_world_position.xyz);
+        // this fragment was occluded in the history frame
+        if (distance> 0.05f * normal_depth.w)
+        {
+            continue;
+        }
         //sample history color
 
-        albedo += imageLoad(historyAlbedo[current_history_index], texture_space_coord);
-        irradiance += imageLoad(historyIrradiance[current_history_index], texture_space_coord);
+        albedo += imageLoad(historyAlbedo[current_history_index], image_coord);
+        irradiance += imageLoad(historyIrradiance[current_history_index], image_coord);
 
         historySampleCount++;
     }

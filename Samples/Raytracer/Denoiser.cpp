@@ -18,6 +18,7 @@ void Denoiser::blurIrradiance(Frame &frame, GBufferResources &gbuffer_resources)
 
 	denoiser_resources.vertical_blur_instance->setImage("inputImage", gbuffer_resources.history_irradiance[frame.index % gbuffer_resources.history_irradiance.size()], Graphics::getCurrentFrame());
 	denoiser_resources.vertical_blur_instance->setImage("outputImage", gbuffer_resources.denoiser_irradiance_vertical_blur_texture, Graphics::getCurrentFrame());
+
 	denoiser_resources.horizontal_blur_instance->setImage("inputImage", gbuffer_resources.denoiser_irradiance_vertical_blur_texture, Graphics::getCurrentFrame());
 	denoiser_resources.horizontal_blur_instance->setImage("outputImage", gbuffer_resources.history_irradiance[frame.index % gbuffer_resources.history_irradiance.size()], Graphics::getCurrentFrame());
 

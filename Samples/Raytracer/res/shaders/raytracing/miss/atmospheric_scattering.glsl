@@ -76,7 +76,7 @@ vec3 calculateAtmosphericScatering()
     //float angle = asin(dot(toLightDir, gl_WorldRayDirectionEXT)/(length(toLightDir)*length(gl_WorldRayDirectionEXT)));
     float weight = 1.0;//(3.0*(1.0+pow(angle, 2.0)))/(16.0*PI);
 
-    vec3 sunColor =vec3(sun_emision, sun_emision*0.8, sun_emision*0.6)*5;
+    vec3 sunColor =vec3(sun_emision, sun_emision*0.8, sun_emision*0.6)*2;
 
     if (atmosphere_travel_t>0)
     {

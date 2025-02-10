@@ -3,7 +3,6 @@
 #extension GL_GOOGLE_include_directive: require
 #extension GL_EXT_nonuniform_qualifier: require
 #extension GL_KHR_shader_subgroup_basic : require
-
 #define PRIMARY_PAYLOAD_OUT
 #include "../common.glsl"
 #include "raytracing.glsl"
@@ -66,22 +65,28 @@ uint getRNGState()
     return uint(uint(gl_LaunchIDEXT.x) * uint(1973) + uint(gl_LaunchIDEXT.y) * uint(9277) + uint(floor(x)) * uint(26699)) | uint(1);
 }
 
-vec2 calculateVelocity(vec3 ray_dir, vec3 ray_origin)
+vec2 calculateVelocity(vec4 hit_position)
 {
     if (frame.data.index -1 < 0)
     return vec2(0);
+
+    int current_history_index = int(mod(frame.data.index, HISTORY_COUNT));
     int previous_history_index = int(mod(frame.data.index - 1, HISTORY_COUNT));
+
+    mat4 current_view = inverse(camera_history.properties[current_history_index].transform);
+    mat4 current_proj = camera_history.properties[current_history_index].projection;
 
     mat4 last_view = inverse(camera_history.properties[previous_history_index].transform);
     mat4 last_proj = camera_history.properties[previous_history_index].projection;
 
-    mat4 last_view_proj =  last_proj * last_view;
-    vec4 prev_screen_space = last_view_proj * vec4((payload.hit_t *ray_dir) + ray_origin, 1.0);
-    vec2 prev_uv = 0.5 * (prev_screen_space.xy / prev_screen_space.w) + 0.5;
-    vec2 uv = (vec2(gl_LaunchIDEXT.xy) + vec2(0.5)) / vec2(gl_LaunchSizeEXT.xy);
-    vec2 velocity = (uv - prev_uv);
+    vec4 current_screen_space =  current_proj * current_view * hit_position;
+    vec4 prev_screen_space = last_proj * last_view * hit_position;
 
-    return velocity.xy;
+    vec2 prev_uv =((prev_screen_space.xy / prev_screen_space.w)+1)* 0.5;
+    vec2 current_uv =((current_screen_space.xy / current_screen_space.w) + 1) * 0.5;
+
+    vec2 motion = current_uv-prev_uv;
+    return motion.xy;
 }
 
 vec3 getMaterialAlbedo(MaterialData material, vec2 uvs)
@@ -98,18 +103,20 @@ vec3 getMaterialNormal(vec3 normal, MaterialData material, vec2 uvs)
     if (material.normal_index >= 0)
     {
         vec3 normalMap = texture(textures[nonuniformEXT(material.normal_index)], uvs).rgb;
-        normal = normalize(normal + normalMap);
+        //todo: implement normal mapping with tengent space
+        return normal;
     }
     return normal;
 }
 
 void main()
 {
+
     int history_index = int(mod(frame.data.index, HISTORY_COUNT));
     uint global_thread_id = gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x;
     uint thread_group_id = global_thread_id / gl_SubgroupSize;
 
-    Ray primary_ray = getRay(true, history_index);
+    Ray primary_ray = getRay(false, history_index);
 
     float tmin = 0.001;
     float tmax = 1000.0;
@@ -117,10 +124,15 @@ void main()
     vec3 primary_albedo = vec3(0, 0, 0);
     vec4 velocity = vec4(0, 0, 0, 1.0);
     vec4 normalDepth = vec4(0, 0, 0, 1.0);
-    vec4 irradiance = vec4(0, 0, 0, 1.0);
+    vec4 irradiance = vec4(0, 0, 0, 0);
 
     float sample_weight = 1.0 / float(frame.data.sample_count);
-    payload.rng_state = getRNGState();
+    payload.rng_state = 0;
+    if (frame.data.use_blue_noise==0)
+    {
+        payload.rng_state = getRNGState();
+    }
+
 
     for (int sample_index = 0; sample_index < frame.data.sample_count; sample_index++)
     {
@@ -143,7 +155,7 @@ void main()
 
         if (payload.hit_sky)
         {
-            normalDepth = vec4(payload.hit_normal, 1 - (payload.hit_t / tmax));
+            normalDepth = vec4(payload.hit_normal, payload.hit_t);
             irradiance += vec4(payload.irradiance, 1.0);
             primary_albedo += irradiance.rgb;
             break;
@@ -155,7 +167,7 @@ void main()
         vec3 normal = getMaterialNormal(payload.hit_normal, material, payload.hit_uv);
         //extract albedo from albedo texture
         vec3 albedo = getMaterialAlbedo(material, payload.hit_uv);
-        normalDepth = vec4(normal, 1 - (payload.hit_t / tmax));
+        normalDepth = vec4(normal, payload.hit_t);
 
         primary_albedo += albedo * sample_weight;
 
@@ -174,7 +186,8 @@ void main()
             hit_position.xyz,
             material,
             normal.xyz,
-            irradianceAlbedo, bounce == 0);
+            irradianceAlbedo,
+            true);
             if (payload.hit_sky)
             {
                 break;
@@ -190,8 +203,9 @@ void main()
         irradiance += vec4(payload.irradiance, 1.0) *sample_weight;
     }
 
-    velocity = vec4(calculateVelocity(primary_ray.direction, primary_ray.origin.xyz), 0.0, 1.0);
     vec4 primary_hit_position = vec4(primary_ray.origin.xyz + (normalDepth.w* primary_ray.direction), 1.0);
+    velocity = vec4(calculateVelocity(primary_hit_position), 0.0, 1.0);
+
 
     imageStore(historyAlbedo[history_index], ivec2(gl_LaunchIDEXT.xy), vec4(primary_albedo, 1.0));
     imageStore(historyNormalDepth[history_index], ivec2(gl_LaunchIDEXT.xy), normalDepth);

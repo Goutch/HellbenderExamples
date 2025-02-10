@@ -30,6 +30,7 @@ struct Frame {
 	float density_falloff = 10.0f;
 	float exposure = 1.0f;
 	float gamma = 2.2f;
+	uint use_blue_noise = 1;
 };
 
 struct GBufferResources {
@@ -52,7 +53,7 @@ struct RaytracerResources {
 	std::vector<Shader *> miss_shaders;
 	std::vector<Shader *> hit_shaders;
 	std::vector<RaytracingShaderGroup> shader_groups;
-	std::vector<Image*> st_blue_noise;
+	std::vector<Image *> st_blue_noise;
 };
 
 struct SceneResources {

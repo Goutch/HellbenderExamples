@@ -1,5 +1,5 @@
 #ifndef HISTORY_COUNT
-#define HISTORY_COUNT 16
+#define HISTORY_COUNT 8
 #endif
 #include "../raytracing/data_structures.glsl"
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
@@ -18,7 +18,7 @@ float gaussianWeight(int x, float sigma) {
     return exp(-(x * x) / (2.0 * sigma * sigma));
 }
 const float weights[5] = float[](0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
-//const float weights[2] = float[](0.33, 0.33);
+//const float weights[2] = float[](0.5, 0.25);
 void blur(ivec2 offsetDirection)
 {
     ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
@@ -26,7 +26,7 @@ void blur(ivec2 offsetDirection)
     vec4 normalDepth = imageLoad(historyNormalDepth[index], coord);
     vec4 color = vec4(0.0);
     float additionalWeight = 0.0;
-    for (int i = 1; i <= 4; ++i) {
+    for (int i = 1; i <5; ++i) {
 
         ivec2 offset = offsetDirection * i;
 

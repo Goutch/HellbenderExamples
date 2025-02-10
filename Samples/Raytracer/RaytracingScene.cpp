@@ -77,7 +77,9 @@ void RaytracingScene::createScene() {
 	camera_entity.get<Camera>()->setRenderTarget(Graphics::getDefaultRenderTarget());
 	camera_entity.get<Camera>()->active = false;
 	camera_entity.get<Transform>()->translate(vec3(0, 1, 0));
-	camera_entity.attach<CameraController>();
+	camera_entity.get<Transform>()->rotate(vec3(0, 2.1416, 0));
+	CameraController* controller = camera_entity.attach<CameraController>();
+	controller->speed = 10.0f;
 	Camera *camera = camera_entity.get<Camera>();
 	setCameraEntity(camera_entity);
 	gbuffer_resources.history_camera.resize(HISTORY_COUNT, {camera_entity.get<Transform>()->world(), camera->projection});
@@ -259,6 +261,9 @@ void RaytracingScene::update(float delta) {
 	if (Input::getKey(KEY_NUMBER_0)) {
 		frame.exposure += delta;
 		Log::message("Exposure:" + std::to_string(frame.exposure));
+	}
+	if (Input::getKeyDown(KEY_N)) {
+		frame.use_blue_noise = uint32_t(!bool(frame.use_blue_noise));
 	}
 
 	if (Input::getKeyDown(KEY_P)) {

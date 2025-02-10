@@ -12,7 +12,7 @@
 using namespace HBE;
 
 
-#define HISTORY_COUNT 16
+#define HISTORY_COUNT 8
 
 class RaytracingScene : public Scene {
 	enum MATERIALS {

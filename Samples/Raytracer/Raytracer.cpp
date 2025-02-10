@@ -1,31 +1,29 @@
 #include "Raytracer.h"
 #include "RaytracingScene.h"
 
-Raytracer::Raytracer()
-{
+Raytracer::Raytracer() {
 	createPrimaryRaytracingResources();
 
 	raytracing_resources.pipeline_instance->setImageArray("blue_noise", raytracing_resources.st_blue_noise.data(), raytracing_resources.st_blue_noise.size());
 }
 
 
-Raytracer::~Raytracer()
-{
+Raytracer::~Raytracer() {
 	delete raytracing_resources.pipeline_instance;
 	delete raytracing_resources.pipeline;
 	delete raytracing_resources.raygen_shader;
-	for (Shader* shader : raytracing_resources.miss_shaders)
-	{
+	for (Shader *shader: raytracing_resources.miss_shaders) {
 		delete shader;
 	}
-	for (Shader* shader : raytracing_resources.hit_shaders)
-	{
+	for (Shader *shader: raytracing_resources.hit_shaders) {
 		delete shader;
+	}
+	for (Image *image: raytracing_resources.st_blue_noise) {
+		delete image;
 	}
 }
 
-void Raytracer::traceRays(Frame& frame, GBufferResources& gbuffer_resources, RootAccelerationStructure* root_acceleration_structure)
-{
+void Raytracer::traceRays(Frame &frame, GBufferResources &gbuffer_resources, RootAccelerationStructure *root_acceleration_structure) {
 	raytracing_resources.pipeline_instance->setUniform("frame", &frame, Graphics::getCurrentFrame());
 	raytracing_resources.pipeline_instance->setUniform("camera_history", gbuffer_resources.history_camera.data(), Graphics::getCurrentFrame());
 
@@ -36,24 +34,21 @@ void Raytracer::traceRays(Frame& frame, GBufferResources& gbuffer_resources, Roo
 	Graphics::traceRays(trace_rays_cmd_info);
 }
 
-void Raytracer::setGBufferUniforms(GBufferResources& gbuffer_resources)
-{
+void Raytracer::setGBufferUniforms(GBufferResources &gbuffer_resources) {
 	raytracing_resources.pipeline_instance->setImageArray("historyAlbedo", gbuffer_resources.history_albedo.data(), gbuffer_resources.history_albedo.size(), -1, 0);
 	raytracing_resources.pipeline_instance->setImageArray("historyNormalDepth", gbuffer_resources.history_normal_depth.data(),
-	                                                              gbuffer_resources.history_normal_depth.size(), -1, 0);
+	                                                      gbuffer_resources.history_normal_depth.size(), -1, 0);
 	raytracing_resources.pipeline_instance->setImageArray("historyMotion", gbuffer_resources.history_motion.data(), gbuffer_resources.history_motion.size(), -1, 0);
 	raytracing_resources.pipeline_instance->setImageArray("historyIrradiance", gbuffer_resources.history_irradiance.data(), gbuffer_resources.history_irradiance.size(), -1,
-	                                                              0);
+	                                                      0);
 	raytracing_resources.pipeline_instance->setImageArray("historyPosition", gbuffer_resources.history_position.data(), gbuffer_resources.history_position.size(), -1, 0);
 }
 
-RaytracerResources& Raytracer::getRaytracingResources()
-{
+RaytracerResources &Raytracer::getRaytracingResources() {
 	return raytracing_resources;
 }
 
-void Raytracer::setSceneUniforms(SceneResources& scene_resources)
-{
+void Raytracer::setSceneUniforms(SceneResources &scene_resources) {
 	if (scene_resources.textures.size() > 0)
 		raytracing_resources.pipeline_instance->setImageArray("textures", scene_resources.textures.data(), scene_resources.textures.size());
 	raytracing_resources.pipeline_instance->setAccelerationStructure("topLevelAS", scene_resources.root_acceleration_structure);
@@ -65,8 +60,7 @@ void Raytracer::setSceneUniforms(SceneResources& scene_resources)
 }
 
 
-void Raytracer::createPrimaryRaytracingResources()
-{
+void Raytracer::createPrimaryRaytracingResources() {
 	ShaderInfo shader_info{};
 	shader_info.stage = SHADER_STAGE_RAY_GEN;
 	shader_info.path = "shaders/raytracing/raygen/raygen.glsl";
@@ -113,17 +107,12 @@ void Raytracer::createPrimaryRaytracingResources()
 	raytracing_resources.pipeline_instance = Resources::createRaytracingPipelineInstance(raytracing_pipeline_instance_info);
 
 	ImageInfo blue_noise_info{};
-	blue_noise_info.flags = IMAGE_FLAG_NONE;
-	blue_noise_info.format = IMAGE_FORMAT_RGB32F;
+	blue_noise_info.flags = IMAGE_FLAG_NO_SAMPLER;
+	blue_noise_info.format = IMAGE_FORMAT_RGBA8_UNORM;
 	blue_noise_info.generate_mip_maps = false;
-	blue_noise_info.sampler_info = {};
-	blue_noise_info.sampler_info.address_mode = IMAGE_SAMPLER_ADDRESS_MODE_REPEAT;
-	blue_noise_info.sampler_info.filter = IMAGE_SAMPLER_FILTER_TYPE_NEAREST;
 
-	std::string blue_noise_path = "textures/stbn_univec3_cosine_2Dx1D_128x128x64_";
-	for (uint32_t i = 0; i < 64; i++)
-	{
-		Image::load(blue_noise_path + std::to_string(i) + ".png", blue_noise_info);
-		raytracing_resources.st_blue_noise.push_back(Resources::createImage(blue_noise_info));
+	std::string blue_noise_path = "textures/stbn_unitvec3_cosine_2Dx1D_128x128x64_";
+	for (uint32_t i = 0; i < 64; i++) {
+		raytracing_resources.st_blue_noise.push_back(Image::load(blue_noise_path + std::to_string(i) + ".png", blue_noise_info));
 	}
 }
