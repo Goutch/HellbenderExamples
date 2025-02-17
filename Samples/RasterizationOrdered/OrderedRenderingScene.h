@@ -1,7 +1,6 @@
 #pragma once
 
 #include "HBE.h"
-#include "../Utilities/FPSCounter.h"
 
 using namespace HBE;
 

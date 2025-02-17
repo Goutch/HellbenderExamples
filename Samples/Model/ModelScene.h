@@ -72,7 +72,6 @@ public:
 		Entity camera_entity = createEntity3D();
 		Camera* camera = camera_entity.attach<Camera>();
 		CameraController* camera_controller = camera_entity.attach<CameraController>();
-		camera_controller->speed = 10;
 		camera_entity.get<Transform>()->translate(vec3(0, 2, 0));
 		camera->setRenderTarget(Graphics::getDefaultRenderTarget());
 		setCameraEntity(camera_entity);
