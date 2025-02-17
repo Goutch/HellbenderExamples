@@ -29,7 +29,6 @@ void Raytracer::traceRays(Frame &frame, GBufferResources &gbuffer_resources, Roo
 
 	TraceRaysCmdInfo trace_rays_cmd_info{};
 	trace_rays_cmd_info.pipeline_instance = raytracing_resources.pipeline_instance;
-	trace_rays_cmd_info.root_acceleration_structure = root_acceleration_structure;
 	trace_rays_cmd_info.resolution = gbuffer_resources.history_albedo[0]->getSize();
 	Graphics::traceRays(trace_rays_cmd_info);
 }
